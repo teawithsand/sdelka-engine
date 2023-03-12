@@ -1,5 +1,4 @@
 import Dexie, { Table } from "dexie"
-import { MAX_NUMBER, MIN_NUMBER } from "../../util/minmax"
 import { dispatchRange } from "../../util/range"
 import {
 	GroupedQueue,
@@ -119,8 +118,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let count = 0
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: MAX_NUMBER,
-			fromIncl: MIN_NUMBER,
+			toIncl: Infinity,
+			fromIncl: -Infinity,
 		})
 
 		if (groups.length) {
@@ -175,8 +174,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let candidates = []
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: MAX_NUMBER,
-			fromIncl: MIN_NUMBER,
+			toIncl: Infinity,
+			fromIncl: -Infinity,
 		})
 
 		if (groups.length) {
@@ -229,8 +228,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let candidates = []
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: MAX_NUMBER,
-			fromIncl: MIN_NUMBER,
+			toIncl: Infinity,
+			fromIncl: -Infinity,
 		})
 
 		if (groups.length) {
@@ -283,8 +282,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let candidates: QueueEntry[] = []
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: MAX_NUMBER,
-			fromIncl: MIN_NUMBER,
+			toIncl: Infinity,
+			fromIncl: -Infinity,
 		})
 
 		if (groups.length) {
