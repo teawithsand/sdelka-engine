@@ -14,7 +14,7 @@ import {
 	SM2EngineStats,
 } from "./defines"
 import { SM2EngineQueueElementExtractor as SM2EngineQueueElementExtractor } from "./queues"
-import { HLEngineStorage as SM2EngineCardStorage } from "./storage"
+import { SM2EngineStorage as SM2EngineCardStorage } from "./storage"
 import { SM2EngineCardDataTransition } from "./transition"
 
 export class SM2Engine<T>

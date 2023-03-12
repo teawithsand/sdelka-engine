@@ -3,16 +3,16 @@ import { InMemoryEngineStorage } from "../../storage/memory/storage"
 import { DebugClock } from "../clock"
 import { SM2CardType } from "./defines"
 import { SM2EngineQueueElementExtractor } from "./queues"
-import { HLEngineStorage } from "./storage"
+import { SM2EngineStorage } from "./storage"
 
-describe("HLEngineStorage", () => {
-	let storage: HLEngineStorage
+describe("SM2EngineStorage", () => {
+	let storage: SM2EngineStorage
 	let clock: DebugClock
 	beforeEach(() => {
 		const inMem = new InMemoryEngineStorage()
 		const queue = inMem.getQueue("main", SM2EngineQueueElementExtractor)
 		clock = new DebugClock()
-		storage = new HLEngineStorage(queue, clock)
+		storage = new SM2EngineStorage(queue, clock)
 	})
 
 	it("yields new cards in correct order", async () => {

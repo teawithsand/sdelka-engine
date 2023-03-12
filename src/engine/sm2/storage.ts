@@ -9,7 +9,7 @@ import {
 } from "./defines"
 import { makeNewSM2EngineCardData, SM2EngineQueueId } from "./innerUtil"
 
-export class HLEngineStorage {
+export class SM2EngineStorage {
 	constructor(
 		public readonly queue: GroupedQueue<SM2EngineCardData>,
 		public readonly clock: Clock
