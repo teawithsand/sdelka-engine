@@ -23,6 +23,7 @@
 	},
 	"dependencies": {
 		"@teawithsand/tws-stl": "^0.0.23",
+		"dexie": "^3.2.3",
 		"immer": "^9.0.19"
 	},
 	"files": [
