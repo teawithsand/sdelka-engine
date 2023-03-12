@@ -1,7 +1,7 @@
 {
 	"name": "@teawithsand/sdelka-engine",
 	"version": "0.0.1",
-	"description": "Extendal",
+	"description": "SM2-like/Anki-like SRS library/engine",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
