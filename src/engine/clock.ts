@@ -1,5 +1,5 @@
 import { getNowTimestamp, TimestampMs } from "@teawithsand/tws-stl"
-import { TimeMs } from "../util/time"
+import { TimeMs } from "../pubutil/time"
 
 /**
  * Like TimestampMs, but expressed in days.

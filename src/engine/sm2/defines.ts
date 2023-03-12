@@ -1,6 +1,6 @@
 import { TimestampMs } from "@teawithsand/tws-stl"
 import { CardId } from "../../storage/storage"
-import { TimeMs } from "../../util/time"
+import { TimeMs } from "../../pubutil/time"
 
 export enum SM2EngineAnswer {
 	EASY = 1,
