@@ -15,10 +15,7 @@ export const SM2EngineQueueElementExtractor: GroupedQueueElementPropsExtractor<
 		return {
 			id: data.id,
 			group: cardTypeToQueueId(data.type),
-			// minus is required, since we pop element with highest priority value
-			// and here we want element to be presented first
-			// so with lowest PTS
-			priority: -data.desiredPresentationTimestamp,
+			priority: data.desiredPresentationTimestamp,
 		}
 	}
 }

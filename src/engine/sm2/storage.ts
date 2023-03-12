@@ -53,7 +53,7 @@ export class SM2EngineStorage {
 	}
 
 	getTopEngineCardData = async (): Promise<SM2EngineCardData | null> => {
-		let card = await this.queue.peekFront([
+		let card = await this.queue.peekBack([
 			SM2EngineQueueId.RELEARNING,
 			SM2EngineQueueId.LEARNED,
 			SM2EngineQueueId.LEARNING,
@@ -74,7 +74,7 @@ export class SM2EngineStorage {
 	getTodaysTopEngineCardData = async (
 		now: TimestampMs = this.clock.getNow()
 	): Promise<SM2EngineCardData | null> => {
-		let card = await this.queue.peekFront([
+		let card = await this.queue.peekBack([
 			SM2EngineQueueId.RELEARNING,
 			SM2EngineQueueId.LEARNED,
 			SM2EngineQueueId.LEARNING,
