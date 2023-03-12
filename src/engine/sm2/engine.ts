@@ -24,7 +24,7 @@ export class SM2Engine<T>
 	private sessionData: Readonly<SM2EngineSessionData> = {
 		lastCardId: null,
 		lastTimestampFetched: 0 as TimestampMs,
-		lastCardFetchedTimestamp: 0 as TimestampMs,
+		additionalLearningCardsCounter: 0,
 	}
 
 	constructor(
@@ -94,8 +94,6 @@ export class SM2Engine<T>
 			}
 			return currentCard
 		}
-
-	public addNewCards = (count: number) => {}
 
 	public getStats = async (): Promise<SM2EngineStats> => {
 		const storageStats = await this.cardStorage.getStorageStats()

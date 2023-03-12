@@ -27,17 +27,14 @@ export type SM2EngineSessionData = {
 	lastTimestampFetched: TimestampMs
 
 	/**
-	 * Note: In fact, day is the only thing that matters, so it could be stored instead.
-	 * But whole ts is stored instead.
-	 *
-	 * TODO(teawithsand): check behavior of day shift on this method of storing day
-	 */
-	lastCardFetchedTimestamp: TimestampMs
-
-	/**
 	 * ID of card fetched from source. Used to determine what next card should be.
 	 */
 	lastCardId: string | null
+
+	/**
+	 * Counter, which tells you how many additional learned cards should be pulled, once we ran out of new cards.
+	 */
+	additionalLearningCardsCounter: number
 }
 
 export type SM2EngineConfig = {
