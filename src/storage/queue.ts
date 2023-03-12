@@ -14,8 +14,8 @@ export type GroupedQueueRangeLike = (
 			fromExcl?: undefined
 	  }
 	| {
-			fromExcl?: undefined
-			fromIncl?: number
+			fromIncl?: undefined
+			fromExcl?: number
 	  }
 ) &
 	(
@@ -41,19 +41,31 @@ export interface GroupedQueue<T> {
 	readonly extractor: GroupedQueueElementPropsExtractor<T>
 
 	add: (element: T) => Promise<void>
+	/**
+	 * Peeks element with highest priority.
+	 */
 	peekFront: (
 		groups: string[],
 		priorityRange?: GroupedQueueRangeLike
 	) => Promise<T | null>
+	/**
+	 * Pops element with highest priority.
+	 */
 	popFront: (
 		groups: string[],
 		priorityRange?: GroupedQueueRangeLike
 	) => Promise<T | null>
 
+	/**
+	 * Peeks element with lowest priority.
+	 */
 	peekBack: (
 		groups: string[],
 		priorityRange?: GroupedQueueRangeLike
 	) => Promise<T | null>
+	/**
+	 * Pops element with lowest priority.
+	 */
 	popBack: (
 		groups: string[],
 		priorityRange?: GroupedQueueRangeLike

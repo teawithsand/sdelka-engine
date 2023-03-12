@@ -118,7 +118,10 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 	) => {
 		let count = 0
 
-		const priorityRange = dispatchRange(priorityRangeRaw ?? {})
+		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
+			toIncl: MAX_NUMBER,
+			fromIncl: MIN_NUMBER,
+		})
 
 		if (groups.length) {
 			// You may have guessed this one already.
@@ -171,7 +174,10 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 	): Promise<QueueEntry | null> => {
 		let candidates = []
 
-		const priorityRange = dispatchRange(priorityRangeRaw ?? {})
+		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
+			toIncl: MAX_NUMBER,
+			fromIncl: MIN_NUMBER,
+		})
 
 		if (groups.length) {
 			// You may have guessed this one already.
@@ -182,15 +188,15 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 			//
 			// This isn't be a problem as long as there aren't too many groups.
 
-			for (const g of groups) {
+			for (const group of groups) {
 				const element = await this.queues
 					.where("[session+name+group+priority]")
 					.between(
 						// yes, you may not leave last entry empty. You have to use tuple that
 						// exactly matches one used in index.
 						// Otherwise results won't be sorted by last field.
-						[session, queue, g, priorityRange.from],
-						[session, queue, g, priorityRange.to],
+						[session, queue, group, priorityRange.from],
+						[session, queue, group, priorityRange.to],
 						priorityRange.fromIncl,
 						priorityRange.toIncl
 					)
@@ -222,7 +228,10 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 	): Promise<QueueEntry | null> => {
 		let candidates = []
 
-		const priorityRange = dispatchRange(priorityRangeRaw ?? {})
+		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
+			toIncl: MAX_NUMBER,
+			fromIncl: MIN_NUMBER,
+		})
 
 		if (groups.length) {
 			// You may have guessed this one already.
@@ -233,15 +242,15 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 			//
 			// This isn't be a problem as long as there aren't too many groups.
 
-			for (const g of groups) {
+			for (const group of groups) {
 				const element = await this.queues
 					.where("[session+name+group+priority]")
 					.between(
 						// yes, you may not leave last entry empty. You have to use tuple that
 						// exactly matches one used in index.
 						// Otherwise results won't be sorted by last field.
-						[session, queue, g, priorityRange.from],
-						[session, queue, g, priorityRange.to],
+						[session, queue, group, priorityRange.from],
+						[session, queue, group, priorityRange.to],
 						priorityRange.fromIncl,
 						priorityRange.toIncl
 					)
@@ -273,7 +282,10 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 	): Promise<QueueEntry[]> => {
 		let candidates: QueueEntry[] = []
 
-		const priorityRange = dispatchRange(priorityRangeRaw ?? {})
+		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
+			toIncl: MAX_NUMBER,
+			fromIncl: MIN_NUMBER,
+		})
 
 		if (groups.length) {
 			// You may have guessed this one already.

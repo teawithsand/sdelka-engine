@@ -1,3 +1,4 @@
+import { fallsInRange } from "../../util/range"
 import { InMemoryTransactionHelper } from "../../util/transaction"
 import {
 	GroupedQueue,
@@ -108,14 +109,9 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 							groups.includes(extractor(e).group)
 					  )
 			if (range) {
-				const { fromIncl, toIncl } = range
-				if (fromIncl !== undefined) {
-					res = res.filter((e) => extractor(e).priority >= fromIncl)
-				}
-
-				if (toIncl !== undefined) {
-					res = res.filter((e) => extractor(e).priority <= toIncl)
-				}
+				res = res.filter((e) =>
+					fallsInRange(range, extractor(e).priority)
+				)
 			}
 
 			return res

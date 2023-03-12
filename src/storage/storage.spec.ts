@@ -1,7 +1,7 @@
 import { generateUUID } from "@teawithsand/tws-stl"
 import { IDBStorageDB, IDBEngineStorage } from "./idb/storage"
 import { InMemoryEngineStorage } from "./memory/storage"
-import { GroupedQueue } from "./queue"
+import { GroupedQueue, GroupedQueueRangeLike } from "./queue"
 import { EngineStorage } from "./storage"
 
 type Data = {
@@ -65,54 +65,139 @@ const testStorage = (storageFactory: () => EngineStorage<Data, Data>) => {
 		})
 	})
 
-	it("can push/pop elements to/from queue", async () => {
-		await queue.push({
+	it("can peekFront element in range", async () => {
+		const SZ = 100
+		const GROUPS = [G1, G2, G3]
+		for (var i = 0; i < SZ; i++) {
+			await queue.add({
+				id: generateUUID(),
+				priority: i + 1,
+				group: GROUPS[i % GROUPS.length],
+			})
+		}
+
+		const queryFront = async (range: GroupedQueueRangeLike) =>
+			(await queue.peekFront([], range))?.priority ?? null
+
+		const queryBack = async (range: GroupedQueueRangeLike) =>
+			(await queue.peekBack([], range))?.priority ?? null
+
+		for (let i = -SZ; i <= SZ; i++) {
+			expect(
+				await queryFront({
+					fromIncl: i,
+				})
+			).toEqual(SZ)
+		}
+
+		for (let i = 1; i <= SZ * 2; i++) {
+			expect(
+				await queryFront({
+					toIncl: i,
+				})
+			).toEqual(Math.min(i, SZ))
+		}
+
+		expect(
+			await queryFront({
+				fromIncl: SZ + 1,
+			})
+		).toStrictEqual(null)
+
+		expect(
+			await queryFront({
+				fromExcl: SZ,
+			})
+		).toStrictEqual(null)
+
+		expect(
+			await queryFront({
+				toIncl: 0,
+			})
+		).toStrictEqual(null)
+
+		expect(
+			await queryFront({
+				toExcl: 1,
+			})
+		).toStrictEqual(null)
+	})
+
+	it("can popBack elements from queue", async () => {
+		await queue.add({
 			id: generateUUID(),
 			priority: 1,
 		})
-		await queue.push({
+		await queue.add({
 			id: generateUUID(),
 			priority: 0,
 			group: G1,
 		})
-		await queue.push({
+		await queue.add({
 			id: generateUUID(),
 			priority: 3,
 			group: G2,
 		})
-		await queue.push({
+		await queue.add({
 			id: generateUUID(),
 			priority: 2,
 			group: G3,
 		})
 
-		expect((await queue.pop([]))?.priority).toEqual(3)
-		expect((await queue.pop([]))?.priority).toEqual(2)
-		expect((await queue.pop([]))?.priority).toEqual(1)
-		expect((await queue.pop([]))?.priority).toEqual(0)
+		expect((await queue.popBack([]))?.priority).toEqual(0)
+		expect((await queue.popBack([]))?.priority).toEqual(1)
+		expect((await queue.popBack([]))?.priority).toEqual(2)
+		expect((await queue.popBack([]))?.priority).toEqual(3)
 	})
 
-	it("can do push that changes element's group", async () => {
+	it("can popFront elements from queue", async () => {
+		await queue.add({
+			id: generateUUID(),
+			priority: 1,
+		})
+		await queue.add({
+			id: generateUUID(),
+			priority: 0,
+			group: G1,
+		})
+		await queue.add({
+			id: generateUUID(),
+			priority: 3,
+			group: G2,
+		})
+		await queue.add({
+			id: generateUUID(),
+			priority: 2,
+			group: G3,
+		})
+
+		expect((await queue.popFront([]))?.priority).toEqual(3)
+		expect((await queue.popFront([]))?.priority).toEqual(2)
+		expect((await queue.popFront([]))?.priority).toEqual(1)
+		expect((await queue.popFront([]))?.priority).toEqual(0)
+	})
+
+	it("can add that changes element's group", async () => {
 		const id = generateUUID()
-		await queue.push({
+		await queue.add({
 			id,
 			priority: 2,
 			group: G1,
 		})
-		await queue.push({
+		await queue.add({
 			id,
 			priority: 1,
 			group: G2,
 		})
-		expect(await queue.peek([G1])).toBeFalsy()
-		expect((await queue.peek([G2]))?.priority).toEqual(1)
+		expect(await queue.peekFront([G1])).toBeFalsy()
+		expect((await queue.peekFront([G2]))?.priority).toEqual(1)
 	})
 
 	it("does not have not existing ids", async () => {
 		const ids = [...new Array(100).keys()].map(() => generateUUID())
 		let i = 0
 		for (const id of ids) {
-			await queue.push({
+			await queue.add({
 				id,
 				priority: i,
 				group: G1,
@@ -129,7 +214,7 @@ const testStorage = (storageFactory: () => EngineStorage<Data, Data>) => {
 		const ids = [...new Array(100).keys()].map(() => generateUUID())
 		let i = 0
 		for (const id of ids) {
-			await queue.push({
+			await queue.add({
 				id,
 				priority: i,
 				group: G1,
