@@ -1,4 +1,5 @@
 import { generateUUID } from "@teawithsand/tws-stl"
+import { IDBStorageDB, IDBEngineStorage } from "./idb/storage"
 import { InMemoryEngineStorage } from "./memory/storage"
 import { GroupedQueue } from "./queue"
 import { EngineStorage } from "./storage"
@@ -107,9 +108,53 @@ const testStorage = (storageFactory: () => EngineStorage<Data, Data>) => {
 		expect((await queue.peek([G2]))?.priority).toEqual(1)
 	})
 
+	it("does not have not existing ids", async () => {
+		const ids = [...new Array(100).keys()].map(() => generateUUID())
+		let i = 0
+		for (const id of ids) {
+			await queue.push({
+				id,
+				priority: i,
+				group: G1,
+			})
+			i++
+		}
+
+		for (let i = 0; i < 100; i++) {
+			expect(await queue.hasId(generateUUID())).toEqual(false)
+		}
+	})
+
+	it("can do get element by id", async () => {
+		const ids = [...new Array(100).keys()].map(() => generateUUID())
+		let i = 0
+		for (const id of ids) {
+			await queue.push({
+				id,
+				priority: i,
+				group: G1,
+			})
+			i++
+		}
+
+		i = 0
+		for (const id of ids) {
+			expect((await queue.getId(id))?.priority).toEqual(i)
+			expect(await queue.hasId(id)).toEqual(true)
+			i++
+		}
+	})
+
 	// TODO(teawithsand): more tests for storage
 }
 
 describe("In-memory storage", () => {
 	testStorage(() => new InMemoryEngineStorage())
+})
+
+describe("IDB storage", () => {
+	const db = new IDBStorageDB<any, any>("db-0")
+	testStorage(() => new IDBEngineStorage(db, generateUUID()))
+
+	// TODO(teawithsand): tests for conflicting session names
 })
