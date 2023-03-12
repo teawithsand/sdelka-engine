@@ -5,7 +5,7 @@ import { Clock } from "../clock"
 import {
 	SM2CardType,
 	SM2EngineCardData,
-	SM2EngineStorageStats
+	SM2EngineStorageStats,
 } from "./defines"
 import { makeNewSM2EngineCardData, SM2EngineQueueId } from "./innerUtil"
 
@@ -38,17 +38,23 @@ export class SM2EngineStorage {
 		await this.setEngineCardData(makeNewSM2EngineCardData(id, offset))
 	}
 
-	getStorageStats = async (): Promise<SM2EngineStorageStats> => {
+	getStorageStats = async (
+		now: TimestampMs
+	): Promise<SM2EngineStorageStats> => {
 		return {
 			newCount: await this.queue.length([SM2EngineQueueId.NEW]),
 			relearningCount: await this.queue.length([
 				SM2EngineQueueId.RELEARNING,
 			]),
 			learningCount: await this.queue.length([SM2EngineQueueId.LEARNING]),
-			// TODO(teawithsand): specify priority range here for LEARNED cards
-			repetitionCount: await this.queue.length([
-				SM2EngineQueueId.LEARNED,
-			]),
+			repetitionCount: await this.queue.length(
+				[SM2EngineQueueId.LEARNED],
+				{
+					toExcl: this.clock.getStartDayTimestamp(
+						this.clock.getDay(now) + 1
+					),
+				}
+			),
 		}
 	}
 

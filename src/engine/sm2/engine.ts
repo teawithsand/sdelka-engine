@@ -96,10 +96,11 @@ export class SM2Engine<T>
 		}
 
 	public getStats = async (): Promise<SM2EngineStats> => {
-		const storageStats = await this.cardStorage.getStorageStats()
+		const now = await this.getNowTimestamp()
+		const storageStats = await this.cardStorage.getStorageStats(now)
 
 		return {
-			storageStats,
+			...storageStats,
 		}
 	}
 

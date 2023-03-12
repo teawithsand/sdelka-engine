@@ -17,7 +17,10 @@ export type SM2EngineStorageStats = {
 }
 
 export type SM2EngineStats = {
-	storageStats: SM2EngineStorageStats
+	newCount: number
+	learningCount: number
+	relearningCount: number
+	repetitionCount: number
 }
 
 export type SM2EngineSessionData = {
