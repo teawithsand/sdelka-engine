@@ -26,7 +26,7 @@ export class SM2EngineStorage {
 	}
 
 	setEngineCardData = async (data: SM2EngineCardData) => {
-		await this.queue.push(data)
+		await this.queue.add(data)
 	}
 
 	deleteEngineCardData = async (id: CardId) => {
@@ -53,7 +53,7 @@ export class SM2EngineStorage {
 	}
 
 	getTopEngineCardData = async (): Promise<SM2EngineCardData | null> => {
-		let card = await this.queue.peek([
+		let card = await this.queue.peekFront([
 			SM2EngineQueueId.RELEARNING,
 			SM2EngineQueueId.LEARNED,
 			SM2EngineQueueId.LEARNING,
@@ -64,7 +64,7 @@ export class SM2EngineStorage {
 		}
 
 		if (!card) {
-			let candidate = await this.queue.peek([SM2EngineQueueId.NEW])
+			let candidate = await this.queue.peekFront([SM2EngineQueueId.NEW])
 			if (candidate) card = candidate
 		}
 
@@ -74,7 +74,7 @@ export class SM2EngineStorage {
 	getTodaysTopEngineCardData = async (
 		now: TimestampMs = this.clock.getNow()
 	): Promise<SM2EngineCardData | null> => {
-		let card = await this.queue.peek([
+		let card = await this.queue.peekFront([
 			SM2EngineQueueId.RELEARNING,
 			SM2EngineQueueId.LEARNED,
 			SM2EngineQueueId.LEARNING,
@@ -85,7 +85,7 @@ export class SM2EngineStorage {
 		}
 
 		if (!card || card.desiredPresentationTimestamp > now) {
-			let candidate = await this.queue.peek([SM2EngineQueueId.NEW])
+			let candidate = await this.queue.peekFront([SM2EngineQueueId.NEW])
 			if (candidate) card = candidate
 		}
 

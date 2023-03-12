@@ -1,9 +1,10 @@
 import Dexie, { Table } from "dexie"
 import { MAX_NUMBER, MIN_NUMBER } from "../../util/minmax"
+import { dispatchRange } from "../../util/range"
 import {
 	GroupedQueue,
 	GroupedQueueElementPropsExtractor,
-	GroupedQueueRange,
+	GroupedQueueRangeLike,
 } from "../queue"
 import { EngineStorage } from "../storage"
 
@@ -30,23 +31,16 @@ type QueueEntry = {
 	data: any
 }
 
-const dispatchRange = (range: GroupedQueueRange) => ({
-	from: range.fromIncl ?? MIN_NUMBER,
-	fromIncl: true,
-	to: range.toIncl ?? MAX_NUMBER,
-	toIncl: false,
-})
-
 /**
  * Have I mentioned that I dislike IDB?
  *
  * Let the queries in this class tell you why. Just imagine how each one would look in SQL...
  * The main PITA is that there is no something like IN, you can only query ranges.
- * 
+ *
  * This class represents DB that contains CD/SD of some type, but actually it's per-session,
  * so you can easily force cast this to some other DB type. Just make sure each session id
- * has the very same data type. 
- * 
+ * has the very same data type.
+ *
  * This class is to-be-used by IDBEngineStorage. You probably do not want to use it on it's own.
  * It's also subject to more frequent changes compared to EngineStorage.
  */
@@ -120,7 +114,7 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		session: string,
 		queue: string,
 		groups: string[],
-		priorityRangeRaw?: GroupedQueueRange
+		priorityRangeRaw?: GroupedQueueRangeLike
 	) => {
 		let count = 0
 
@@ -173,7 +167,7 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		session: string,
 		queue: string,
 		groups: string[],
-		priorityRangeRaw?: GroupedQueueRange
+		priorityRangeRaw?: GroupedQueueRangeLike
 	): Promise<QueueEntry | null> => {
 		let candidates = []
 
@@ -220,11 +214,62 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		return candidates.length ? candidates[0] : null
 	}
 
+	getQueueBottomElement = async (
+		session: string,
+		queue: string,
+		groups: string[],
+		priorityRangeRaw?: GroupedQueueRangeLike
+	): Promise<QueueEntry | null> => {
+		let candidates = []
+
+		const priorityRange = dispatchRange(priorityRangeRaw ?? {})
+
+		if (groups.length) {
+			// You may have guessed this one already.
+			///
+			// There is no way to do SQL "IN" in idb...
+			// You may only do "ranges" and there is no way to be sure that no group that you wouldn't want
+			// to include fall into range that you want to query.
+			//
+			// This isn't be a problem as long as there aren't too many groups.
+
+			for (const g of groups) {
+				const element = await this.queues
+					.where("[session+name+group+priority]")
+					.between(
+						// yes, you may not leave last entry empty. You have to use tuple that
+						// exactly matches one used in index.
+						// Otherwise results won't be sorted by last field.
+						[session, queue, g, priorityRange.from],
+						[session, queue, g, priorityRange.to],
+						priorityRange.fromIncl,
+						priorityRange.toIncl
+					)
+					.first()
+				if (element) candidates.push(element)
+			}
+		} else {
+			const element = await this.queues
+				.where("[session+name+priority]")
+				.between(
+					[session, queue, priorityRange.from],
+					[session, queue, priorityRange.to],
+					priorityRange.fromIncl,
+					priorityRange.toIncl
+				)
+				.first()
+			if (element) candidates.push(element)
+		}
+
+		candidates.sort((a, b) => a.priority - b.priority)
+		return candidates.length ? candidates[0] : null
+	}
+
 	getQueueToArray = async (
 		session: string,
 		queue: string,
 		groups: string[],
-		priorityRangeRaw?: GroupedQueueRange
+		priorityRangeRaw?: GroupedQueueRangeLike
 	): Promise<QueueEntry[]> => {
 		let candidates: QueueEntry[] = []
 
@@ -319,7 +364,7 @@ export class IDBEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 		return {
 			extractor,
 
-			push: async (e) => {
+			add: async (e) => {
 				const v = extractor(e)
 				await this.db.pushQueueElement({
 					id: v.id,
@@ -330,7 +375,7 @@ export class IDBEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 					data: e,
 				})
 			},
-			peek: async (groups, priorityRange) => {
+			peekFront: async (groups, priorityRange) => {
 				return ((
 					await this.db.getQueueTopElement(
 						this.session,
@@ -340,12 +385,43 @@ export class IDBEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 					)
 				)?.data ?? null) as D | null
 			},
-			pop: async (groups, priorityRange) => {
+			peekBack: async (groups, priorityRange) => {
+				return ((
+					await this.db.getQueueBottomElement(
+						this.session,
+						queueName,
+						groups,
+						priorityRange
+					)
+				)?.data ?? null) as D | null
+			},
+			popFront: async (groups, priorityRange) => {
 				return await this.db.transaction(
 					"rw?",
 					[this.db.queues],
 					async () => {
 						const element = await this.db.getQueueTopElement(
+							this.session,
+							queueName,
+							groups,
+							priorityRange
+						)
+						if (!element) return null
+						await this.db.deleteQueueElement(
+							this.session,
+							queueName,
+							element.id
+						)
+						return element.data as D
+					}
+				)
+			},
+			popBack: async (groups, priorityRange) => {
+				return await this.db.transaction(
+					"rw?",
+					[this.db.queues],
+					async () => {
+						const element = await this.db.getQueueBottomElement(
 							this.session,
 							queueName,
 							groups,

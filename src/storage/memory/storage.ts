@@ -2,7 +2,7 @@ import { InMemoryTransactionHelper } from "../../util/transaction"
 import {
 	GroupedQueue,
 	GroupedQueueElementPropsExtractor,
-	GroupedQueueRange,
+	GroupedQueueRangeLike,
 } from "../queue"
 import { EngineStorage } from "../storage"
 
@@ -97,7 +97,10 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 			this.dataToUse.queues[queueId] = data
 		}
 
-		const getSubQueue = (groups: string[], range?: GroupedQueueRange) => {
+		const getSubQueue = (
+			groups: string[],
+			range?: GroupedQueueRangeLike
+		) => {
 			let res =
 				groups.length === 0
 					? getQueueData()
@@ -135,12 +138,12 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 			length: async (groups, ranges) => {
 				return getSubQueue(groups, ranges).length
 			},
-			peek: async (groups, ranges) => {
+			peekFront: async (groups, ranges) => {
 				const elements = getSubQueue(groups, ranges)
 				if (elements.length === 0) return null
 				return elements[0]
 			},
-			pop: async (groups, ranges) => {
+			popFront: async (groups, ranges) => {
 				const elements = getSubQueue(groups, ranges)
 				if (elements.length === 0) return null
 				const res = elements[0]
@@ -152,7 +155,24 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 
 				return res
 			},
-			push: async (element) => {
+			peekBack: async (groups, ranges) => {
+				const elements = getSubQueue(groups, ranges)
+				if (elements.length === 0) return null
+				return elements[elements.length - 1]
+			},
+			popBack: async (groups, ranges) => {
+				const elements = getSubQueue(groups, ranges)
+				if (elements.length === 0) return null
+				const res = elements[elements.length - 1]
+
+				const i = getQueueData().findIndex(
+					(e) => extractor(e).id === extractor(res).id
+				)
+				getQueueData().splice(i, 1)
+
+				return res
+			},
+			add: async (element) => {
 				// Single element with given id may exist in queue
 				const i = getQueueData().findIndex(
 					(e) => extractor(e).id === extractor(element).id
