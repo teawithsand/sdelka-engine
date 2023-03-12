@@ -1,0 +1,26 @@
+{
+	"name": "@teawithsand/sdelka-engine",
+	"version": "0.0.1",
+	"description": "Extendal",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"test": "jest",
+		"docs": "typedoc --out docs src"
+	},
+	"keywords": [],
+	"author": "teawithsand",
+	"license": "AGPL-3.0",
+	"devDependencies": {
+		"@types/jest": "^29.0.3"
+	},
+	"dependencies": {
+		"@teawithsand/tws-stl": "^0.0.23",
+		"immer": "^9.0.19",
+		"typedoc": "^0.23.26"
+	},
+	"files": [
+		"dist/**"
+	]
+}

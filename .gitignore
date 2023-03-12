@@ -1,0 +1,8 @@
+node_modules
+/docs
+/dist
+.devcontainer
+.vscode
+
+# TODO(teawithsand): 
+# add .vscode and .devcontainer to my system's global gitignore
