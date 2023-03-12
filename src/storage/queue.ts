@@ -1,7 +1,9 @@
+import { IDBComparable } from "../pubutil"
+
 export interface GroupedQueueElementProps {
 	readonly id: string
 	readonly group: string
-	readonly priority: number
+	readonly priority: IDBComparable
 }
 
 export type GroupedQueueElementPropsExtractor<T> = (
@@ -10,22 +12,22 @@ export type GroupedQueueElementPropsExtractor<T> = (
 
 export type GroupedQueueRangeLike = (
 	| {
-			fromIncl?: number
+			fromIncl?: IDBComparable
 			fromExcl?: undefined
 	  }
 	| {
 			fromIncl?: undefined
-			fromExcl?: number
+			fromExcl?: IDBComparable
 	  }
 ) &
 	(
 		| {
-				toIncl?: number
+				toIncl?: IDBComparable
 				toExcl?: undefined
 		  }
 		| {
 				toIncl?: undefined
-				toExcl?: number
+				toExcl?: IDBComparable
 		  }
 	)
 

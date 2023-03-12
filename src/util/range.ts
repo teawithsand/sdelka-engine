@@ -1,6 +1,10 @@
+import { IDBComparable, idbComparator } from "../pubutil"
 import { GroupedQueueRangeLike } from "../storage"
 
-const isIncl = (incl: number | undefined, excl: number | undefined) => {
+const isIncl = (
+	incl: IDBComparable | undefined,
+	excl: IDBComparable | undefined
+) => {
 	if (incl === undefined && excl === undefined) return undefined
 	return incl !== undefined
 }
@@ -40,22 +44,21 @@ export const dispatchRange = (
 
 export const fallsInRange = (
 	range: GroupedQueueRangeLike,
-	value: number
+	value: IDBComparable
 ): boolean => {
 	const { from, to, fromIncl, toIncl } = dispatchRange(range)
-
 	if (from !== undefined) {
 		if (fromIncl) {
-			if (value < from) return false
+			if (idbComparator(value, from) < 0) return false
 		} else {
-			if (value <= from) return false
+			if (idbComparator(value, from) <= 0) return false
 		}
 	}
 	if (to !== undefined) {
 		if (toIncl) {
-			if (value > to) return false
+			if (idbComparator(value, to) > 0) return false
 		} else {
-			if (value >= to) return false
+			if (idbComparator(value, to) >= 0) return false
 		}
 	}
 

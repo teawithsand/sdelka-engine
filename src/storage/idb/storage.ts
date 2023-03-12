@@ -1,4 +1,10 @@
 import Dexie, { Table } from "dexie"
+import {
+	IDBComparable,
+	idbComparator,
+	MAX_IDB_KEY,
+	MIN_IDB_KEY,
+} from "../../pubutil"
 import { dispatchRange } from "../../util/range"
 import {
 	GroupedQueue,
@@ -25,7 +31,7 @@ type QueueEntry = {
 
 	name: string
 	group: string
-	priority: number
+	priority: IDBComparable
 
 	data: any
 }
@@ -118,8 +124,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let count = 0
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: Infinity,
-			fromIncl: -Infinity,
+			toIncl: MAX_IDB_KEY,
+			fromIncl: MIN_IDB_KEY,
 		})
 
 		if (groups.length) {
@@ -174,8 +180,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let candidates = []
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: Infinity,
-			fromIncl: -Infinity,
+			toIncl: MAX_IDB_KEY,
+			fromIncl: MIN_IDB_KEY,
 		})
 
 		if (groups.length) {
@@ -215,7 +221,7 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 			if (element) candidates.push(element)
 		}
 
-		candidates.sort((a, b) => -(a.priority - b.priority))
+		candidates.sort((a, b) => -idbComparator(a.priority, b.priority))
 		return candidates.length ? candidates[0] : null
 	}
 
@@ -228,8 +234,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let candidates = []
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: Infinity,
-			fromIncl: -Infinity,
+			toIncl: MAX_IDB_KEY,
+			fromIncl: MIN_IDB_KEY,
 		})
 
 		if (groups.length) {
@@ -269,7 +275,7 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 			if (element) candidates.push(element)
 		}
 
-		candidates.sort((a, b) => a.priority - b.priority)
+		candidates.sort((a, b) => idbComparator(a.priority, b.priority))
 		return candidates.length ? candidates[0] : null
 	}
 
@@ -282,8 +288,8 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 		let candidates: QueueEntry[] = []
 
 		const priorityRange = dispatchRange(priorityRangeRaw ?? {}, {
-			toIncl: Infinity,
-			fromIncl: -Infinity,
+			toIncl: MAX_IDB_KEY,
+			fromIncl: MIN_IDB_KEY,
 		})
 
 		if (groups.length) {
@@ -323,7 +329,7 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 			candidates = [...candidates, ...element]
 		}
 
-		candidates.sort((a, b) => -(a.priority - b.priority))
+		candidates.sort((a, b) => -idbComparator(a.priority, b.priority))
 		return candidates
 	}
 }

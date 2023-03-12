@@ -1,3 +1,4 @@
+import { idbComparator } from "../../pubutil"
 import { fallsInRange } from "../../util/range"
 import { InMemoryTransactionHelper } from "../../util/transaction"
 import {
@@ -177,7 +178,11 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 
 				getQueueData().push(element)
 				getQueueData().sort(
-					(a, b) => -(extractor(a).priority - extractor(b).priority)
+					(a, b) =>
+						-idbComparator(
+							extractor(a).priority,
+							extractor(b).priority
+						)
 				)
 			},
 			hasId: async (id: string) => {
