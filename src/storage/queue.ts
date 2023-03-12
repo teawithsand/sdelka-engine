@@ -32,8 +32,6 @@ export interface GroupedQueue<T> {
 	 */
 	length: (groups: string[], priorityRange?: GroupedQueueRange) => Promise<number>
 	clear: (groups: string[]) => Promise<void>
-
-	index: (i: number, groups: string[]) => Promise<T | null>
 	
 	hasId: (id: string) => Promise<boolean>
 	getId: (id: string) => Promise<T | null>
@@ -43,5 +41,5 @@ export interface GroupedQueue<T> {
 	 * RESERVED FOR DEBUGGING USAGE!!!
 	 * DO NOT USE IN PRODUCTION CODE!!!
 	 */
-	toArray: () => Promise<T[]>
+	toArray: (groups: string[]) => Promise<T[]>
 }

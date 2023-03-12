@@ -164,9 +164,6 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 					(a, b) => -(extractor(a).priority - extractor(b).priority)
 				)
 			},
-			index: async (i: number, groups: string[]): Promise<D | null> => {
-				return getQueueData()[i] ?? null
-			},
 			hasId: async (id: string) => {
 				return !!getQueueData().find((e) => extractor(e).id === id)
 			},
