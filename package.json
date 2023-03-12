@@ -9,9 +9,15 @@
 		"test": "jest",
 		"docs": "typedoc --out docs src"
 	},
-	"keywords": [],
+	"keywords": [
+		"srs",
+		"sdelka",
+		"cards",
+		"web"
+	],
 	"author": "teawithsand",
 	"license": "AGPL-3.0",
+	"repository": "https://github.com/teawithsand/sdelka-engine",
 	"devDependencies": {
 		"@types/jest": "^29.0.3",
 		"fake-indexeddb": "^4.0.1",
