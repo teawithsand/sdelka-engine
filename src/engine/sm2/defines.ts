@@ -50,9 +50,9 @@ export type SM2EngineSessionData = {
 	lastTimestampFetched: TimestampMs
 
 	/**
-	 * ID of card fetched from source. Used to determine what next card should be.
+	 * Serialized cursor value used to process source this engine is given.
 	 */
-	lastCardId: string | null
+	serializedCursor: any | null
 
 	/**
 	 * How many cards were polled from source so far.

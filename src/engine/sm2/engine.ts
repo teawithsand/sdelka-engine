@@ -1,6 +1,6 @@
 import { throwExpression, TimestampMs } from "@teawithsand/tws-stl"
 import { Draft, produce } from "immer"
-import { CardSource } from "../../storage/source"
+import { CardSource, CardSourceCursor } from "../../storage/source"
 import { EngineStorage } from "../../storage/storage"
 import { Clock } from "../clock"
 import { Engine } from "../engine"
@@ -37,7 +37,7 @@ export class SM2Engine<T>
 	) {}
 
 	private sessionData: Readonly<SM2EngineSessionData> = {
-		lastCardId: null,
+		serializedCursor: null,
 		polledCardCount: 0,
 		lastTimestampFetched: 0 as TimestampMs,
 		dailyData: {
@@ -49,12 +49,13 @@ export class SM2Engine<T>
 		hiddenNewCardsCount: 0,
 	}
 	private currentCardData: Readonly<SM2EngineCardData | null> = null
+	private currentCursor: CardSourceCursor | null = null
 
 	private readonly transition = new SM2EngineCardDataTransition(this.config)
 
 	private appendNewCards = async (count: number) => {
 		this.currentCardData = null
-		let lastCardId = this.sessionData.lastCardId
+		let lastCardId = this.sessionData.serializedCursor
 
 		if (this.sessionData.hiddenNewCardsCount > 0) {
 			const newHiddenCardsCount = Math.max(
@@ -71,20 +72,33 @@ export class SM2Engine<T>
 			count = newCount
 		}
 
-		for (var i = 0; i < count; i++) {
-			const id = await this.source.getCardNext(lastCardId)
-			if (id === null) break
-			lastCardId = id
-			await this.cardStorage.appendNewCard(
-				id,
-				// subtract 2**31 here in order to stay SMI for as long as possible
-				// both in JS engine and in idb encoding(though I am not sure about 2nd one)
-				this.sessionData.polledCardCount + i - 2 ** 31
-			)
+		const cursor = await this.getOrLoadCursor()
+
+		let i = 0
+		for (;;) {
+			if(i >= count) break
+
+			const id = cursor.currentId
+			if (id !== null) {
+				i++
+				if (id === null) break
+				lastCardId = id
+				await this.cardStorage.appendNewCard(
+					id,
+					// subtract 2**31 here in order to stay SMI for as long as possible
+					// both in JS engine and in idb encoding(though I am not sure about 2nd one)
+					this.sessionData.polledCardCount + i - 2 ** 31
+				)
+			}
+
+			const goneToNext = await cursor.next()
+			if (!goneToNext) {
+				break
+			}
 		}
 
 		await this.updateSessionData((draft) => {
-			draft.lastCardId = lastCardId
+			draft.serializedCursor = lastCardId
 			draft.polledCardCount += i
 		})
 
@@ -210,11 +224,29 @@ export class SM2Engine<T>
 		await this.lowLevelStorage.setSessionData(this.sessionData)
 	}
 
+	private getOrLoadCursor = async () => {
+		if (!this.currentCursor) {
+			if (this.sessionData.serializedCursor) {
+				this.currentCursor = this.source.deserializeCursor(
+					this.sessionData.serializedCursor
+				)
+				await this.currentCursor.refresh()
+			} else {
+				this.currentCursor = this.source.newCursor()
+			}
+		}
+
+		return this.currentCursor
+	}
+
 	private initialize = async () => {
 		if (this.isInitialized) return
 
 		this.sessionData =
 			(await this.lowLevelStorage.getSessionData()) ?? this.sessionData
+
+		await this.getOrLoadCursor()
+
 		this.isInitialized = true
 	}
 

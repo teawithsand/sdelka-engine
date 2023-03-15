@@ -1,33 +1,29 @@
 import { CardId } from "./storage"
 
-export interface CardSource<T> {
-	getCard: (cardId: CardId) => Promise<T | null>
-	getCardNext: (lastCardId: CardId | null) => Promise<CardId | null>
-	getCardPrev: (lastCardId: CardId | null) => Promise<CardId | null>
+export interface CardSourceCursor {
+	readonly currentId: CardId | null
+	/**
+	 * Nulls-out currentId if card with given id was removed.
+	 * 
+	 * It DOES NOT reset position of this cursor.
+	 */
+	refresh: () => Promise<void>
+	next: () => Promise<boolean>
 }
 
-export class InMemoryCardSource<T extends { id: string }>
-	implements CardSource<T>
-{
-	constructor(private readonly cards: T[]) {}
+export interface CardSource<T> {
+	getCard: (cardId: CardId) => Promise<T | null>
 
-	getCard = async (cardId: string): Promise<T | null> => {
-		return this.cards.find((c) => c.id === cardId) ?? null
-	}
+	serializeCursor: (cursor: CardSourceCursor) => any
+	deserializeCursor: (data: any) => CardSourceCursor
 
-	getCardNext = async (lastCardId: string | null): Promise<string | null> => {
-		if (lastCardId === null) return this.cards[0]?.id ?? null
-		const i = this.cards.findIndex((c) => c.id === lastCardId)
-		if (i < 0) throw new Error(`Invalid id provided ${lastCardId}`)
-		if (i + 1 >= this.cards.length) return null
-		return this.cards[i + 1].id
-	}
+	newCursor: () => CardSourceCursor
+}
 
-	getCardPrev = async (lastCardId: string | null) => {
-		if (lastCardId === null) return null
-		const i = this.cards.findIndex((c) => c.id === lastCardId)
-		if (i < 0) throw new Error(`Invalid id provided ${lastCardId}`)
-		if (i <= 0) return null
-		return this.cards[i - 1].id
-	}
+/**
+ * CardSource, which may have cards deleted from and appended to.
+ */
+export interface AppendDeleteCardSource<T> extends CardSource<T> {
+	append: (data: T) => Promise<void>
+	delete: (id: CardId) => Promise<void>
 }

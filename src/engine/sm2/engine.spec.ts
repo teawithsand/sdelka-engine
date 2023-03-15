@@ -3,8 +3,8 @@ import {
 	throwExpression,
 	TimestampMs,
 } from "@teawithsand/tws-stl"
-import { InMemoryCardSource } from "../../storage"
 import { InMemoryEngineStorage } from "../../storage/memory"
+import { InMemoryCardSource } from "../../storage/memory/source"
 import { DebugClock } from "../clock"
 import { SM2CardType, SM2EngineAnswer, SM2EngineConfig } from "./defines"
 import { SM2Engine } from "./engine"
