@@ -47,7 +47,7 @@ export class SM2EngineStorage {
 				SM2EngineQueueId.RELEARNING,
 			]),
 			learningCount: await this.queue.length([SM2EngineQueueId.LEARNING]),
-			repetitionCount: await this.queue.length(
+			todayLearnedCount: await this.queue.length(
 				[SM2EngineQueueId.LEARNED],
 				{
 					toExcl: this.clock.getStartDayTimestamp(
@@ -58,7 +58,9 @@ export class SM2EngineStorage {
 		}
 	}
 
-	getTopEngineCardData = async (): Promise<SM2EngineCardData | null> => {
+	getTopEngineCardData = async (
+		now: TimestampMs
+	): Promise<SM2EngineCardData | null> => {
 		let card = await this.queue.peekBack([
 			SM2EngineQueueId.RELEARNING,
 			SM2EngineQueueId.LEARNED,
@@ -69,9 +71,8 @@ export class SM2EngineStorage {
 			throw new Error("Assertion filed: Card can't be new here")
 		}
 
-		if (!card) {
-			let candidate = await this.queue.peekFront([SM2EngineQueueId.NEW])
-			if (candidate) card = candidate
+		if (!card || card.desiredPresentationTimestamp > now) {
+			card = await this.queue.peekFront([SM2EngineQueueId.NEW]) ?? card
 		}
 
 		return card
@@ -90,11 +91,6 @@ export class SM2EngineStorage {
 			throw new Error("Assertion filed: Card can't be new here")
 		}
 
-		if (!card || card.desiredPresentationTimestamp > now) {
-			let candidate = await this.queue.peekFront([SM2EngineQueueId.NEW])
-			if (candidate) card = candidate
-		}
-
 		if (
 			card &&
 			card.type === SM2CardType.LEARNED &&
@@ -102,6 +98,10 @@ export class SM2EngineStorage {
 				this.clock.getDay(now)
 		) {
 			card = null
+		}
+
+		if (!card || card.desiredPresentationTimestamp > now) {
+			card = (await this.queue.peekFront([SM2EngineQueueId.NEW])) ?? card
 		}
 
 		return card

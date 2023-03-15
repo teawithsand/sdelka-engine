@@ -1,6 +1,7 @@
 import { TimestampMs } from "@teawithsand/tws-stl"
 import { CardId } from "../../storage/storage"
 import { TimeMs } from "../../pubutil/time"
+import { DayTimestamp } from "../clock"
 
 export enum SM2EngineAnswer {
 	EASY = 1,
@@ -13,7 +14,7 @@ export type SM2EngineStorageStats = {
 	newCount: number
 	learningCount: number
 	relearningCount: number
-	repetitionCount: number
+	todayLearnedCount: number
 }
 
 export type SM2EngineStats = {
@@ -21,6 +22,25 @@ export type SM2EngineStats = {
 	learningCount: number
 	relearningCount: number
 	repetitionCount: number
+}
+
+export type SM2EngineDailySessionData = {
+	dayTimestamp: DayTimestamp
+	
+	/**
+	 * How many cards were polled from LEARNED queue today.
+	 */
+	learnedReviewedCount: number
+
+	/**
+	 * Daily limit of reviewed cards. Can be adjusted accordingly.
+	 */
+	maxLearnedReviewCardCount: number
+
+	/**
+	 * How many cards(besides reviewed in-schedule) should be processed today.
+	 */
+	additionalLearnedReviewCount: number
 }
 
 export type SM2EngineSessionData = {
@@ -35,14 +55,12 @@ export type SM2EngineSessionData = {
 	lastCardId: string | null
 
 	/**
-	 * Counter, which tells you how many additional learned cards should be pulled, once we ran out of new cards.
+	 * Session data, which gets reset every day.
 	 */
-	additionalLearningCardsCounter: number
+	dailyData: SM2EngineDailySessionData
 }
 
 export type SM2EngineConfig = {
-	newCardsPerDay: number
-
 	skipLearningInterval: number
 	skipLearningEaseFactor: number
 
@@ -61,6 +79,9 @@ export type SM2EngineConfig = {
 
 	learningSteps: TimeMs[]
 	relearningSteps: TimeMs[]
+
+	maxNewCardsPerDay: number
+	maxDailyReviewCardCount: number
 }
 
 export enum SM2CardType {
@@ -68,6 +89,13 @@ export enum SM2CardType {
 	LEARNING = 1,
 	LEARNED = 2,
 	RELEARNING = 3,
+}
+
+export type SM2EngineCardStats = {
+	/**
+	 * How many times has this card jumped from learned to relearning.
+	 */
+	lapCount: number
 }
 
 export type SM2EngineCardData = {
@@ -87,30 +115,24 @@ export type SM2EngineCardData = {
 					type: SM2CardType.LEARNING
 					stepIndex: number
 			  }
-			| ({
-					/**
-					 * How many times has this card jumped from learned to relearning.
-					 */
-					lapCount: number
-
+			| (SM2EngineCardStats & {
 					/**
 					 * Factor, which should be used to multiply intervals by.
 					 */
 					easeFactor: number
 			  } & (
-					| {
-							type: SM2CardType.RELEARNING
-							stepIndex: number
-					  }
-					| {
-							type: SM2CardType.LEARNED
+						| {
+								type: SM2CardType.RELEARNING
+								stepIndex: number
+						  }
+						| {
+								type: SM2CardType.LEARNED
 
-							/**
-							 * Interval used to determine next desiredPresentationTimestamp.
-							 */
-							interval: TimeMs
-					  }
-			  ))
+								/**
+								 * Interval used to determine next desiredPresentationTimestamp.
+								 */
+								interval: TimeMs
+						  }
+					))
 	  ))
 )
-
