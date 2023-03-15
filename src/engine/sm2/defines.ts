@@ -55,9 +55,20 @@ export type SM2EngineSessionData = {
 	lastCardId: string | null
 
 	/**
+	 * How many cards were polled from source so far.
+	 */
+	polledCardCount: number
+
+	/**
 	 * Session data, which gets reset every day.
 	 */
 	dailyData: SM2EngineDailySessionData
+
+	/**
+	 * How many new cards, which are placed on queue, are considered discarded
+	 * and are not used until new cards are added.
+	 */
+	hiddenNewCardsCount: number
 }
 
 export type SM2EngineConfig = {
@@ -81,7 +92,7 @@ export type SM2EngineConfig = {
 	relearningSteps: TimeMs[]
 
 	maxNewCardsPerDay: number
-	maxDailyReviewCardCount: number
+	maxLearnedReviewsPerDay: number
 }
 
 export enum SM2CardType {

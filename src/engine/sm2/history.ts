@@ -6,23 +6,23 @@ import {
 import { Clock } from "../clock"
 import { SM2EngineCardData } from "./defines"
 
-type SM2EngineHistoryData = {
+type SM2EngineHistoryEntry = {
 	data: SM2EngineCardData
 	index: number
 	id: string
 }
 
 export const SM2EngineHistoryDataGroupedQueueElementPropsExtractor: GroupedQueueElementPropsExtractor<
-	SM2EngineHistoryData
+	SM2EngineHistoryEntry
 > = (data) => ({
 	id: data.id,
-	group: "history",
+	group: "",
 	priority: data.index,
 })
 
 export class SM2EngineHistory {
 	constructor(
-		public readonly queue: GroupedQueue<SM2EngineHistoryData>,
+		public readonly queue: GroupedQueue<SM2EngineHistoryEntry>,
 		public readonly clock: Clock,
 		public readonly maxHistorySize: number = 250
 	) {}
@@ -45,5 +45,9 @@ export class SM2EngineHistory {
 		if (!res) return null
 
 		return res.data
+	}
+
+	length = async (): Promise<number> => {
+		return await this.queue.length([])
 	}
 }

@@ -66,6 +66,7 @@ export class DebugClock implements Clock {
 	set = (v: TimestampMs) => {
 		this.value = v
 	}
+	nextDay = () => this.set((this.value + 1000 * 60 * 60 * 24) as TimestampMs)
 	getNow = () => this.value
 	getDay = (ts: TimestampMs) => Math.floor(ts / 1000 / 60 / 60 / 24)
 

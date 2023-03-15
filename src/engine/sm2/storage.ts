@@ -33,9 +33,12 @@ export class SM2EngineStorage {
 		await this.queue.deleteId(id)
 	}
 
-	appendNewCard = async (id: CardId) => {
-		const offset = await this.queue.length([SM2EngineQueueId.NEW])
+	appendNewCard = async (id: CardId, offset: number) => {
 		await this.setEngineCardData(makeNewSM2EngineCardData(id, offset))
+	}
+
+	getNewCardCount = async () => {
+		return await this.queue.length([SM2EngineQueueId.NEW])
 	}
 
 	getStorageStats = async (
@@ -59,7 +62,8 @@ export class SM2EngineStorage {
 	}
 
 	getTopEngineCardData = async (
-		now: TimestampMs
+		now: TimestampMs,
+		disallowNew?: boolean
 	): Promise<SM2EngineCardData | null> => {
 		let card = await this.queue.peekBack([
 			SM2EngineQueueId.RELEARNING,
@@ -71,8 +75,12 @@ export class SM2EngineStorage {
 			throw new Error("Assertion filed: Card can't be new here")
 		}
 
-		if (!card || card.desiredPresentationTimestamp > now) {
-			card = await this.queue.peekFront([SM2EngineQueueId.NEW]) ?? card
+		if (
+			!disallowNew &&
+			(!card || card.desiredPresentationTimestamp > now)
+		) {
+			const poll = await this.queue.peekBack([SM2EngineQueueId.NEW])
+			card = poll ?? card
 		}
 
 		return card

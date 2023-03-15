@@ -3,6 +3,7 @@ import { CardId } from "./storage"
 export interface CardSource<T> {
 	getCard: (cardId: CardId) => Promise<T | null>
 	getCardNext: (lastCardId: CardId | null) => Promise<CardId | null>
+	getCardPrev: (lastCardId: CardId | null) => Promise<CardId | null>
 }
 
 export class InMemoryCardSource<T extends { id: string }>
@@ -17,7 +18,16 @@ export class InMemoryCardSource<T extends { id: string }>
 	getCardNext = async (lastCardId: string | null): Promise<string | null> => {
 		if (lastCardId === null) return this.cards[0]?.id ?? null
 		const i = this.cards.findIndex((c) => c.id === lastCardId)
+		if (i < 0) throw new Error(`Invalid id provided ${lastCardId}`)
 		if (i + 1 >= this.cards.length) return null
 		return this.cards[i + 1].id
+	}
+
+	getCardPrev = async (lastCardId: string | null) => {
+		if (lastCardId === null) return null
+		const i = this.cards.findIndex((c) => c.id === lastCardId)
+		if (i < 0) throw new Error(`Invalid id provided ${lastCardId}`)
+		if (i <= 0) return null
+		return this.cards[i - 1].id
 	}
 }

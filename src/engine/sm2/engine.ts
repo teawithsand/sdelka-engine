@@ -17,7 +17,6 @@ import {
 	SM2EngineHistory,
 	SM2EngineHistoryDataGroupedQueueElementPropsExtractor as SM2EngineHistoryQueueElementExtractor,
 } from "./history"
-import { makeNewSM2EngineCardData } from "./innerUtil"
 import { SM2EngineQueueElementExtractor as SM2EngineCardQueueElementExtractor } from "./queues"
 import { SM2EngineStorage as SM2EngineCardStorage } from "./storage"
 import { SM2EngineCardDataTransition } from "./transition"
@@ -39,17 +38,70 @@ export class SM2Engine<T>
 
 	private sessionData: Readonly<SM2EngineSessionData> = {
 		lastCardId: null,
+		polledCardCount: 0,
 		lastTimestampFetched: 0 as TimestampMs,
 		dailyData: {
-			maxLearnedReviewCardCount: this.config.maxDailyReviewCardCount,
+			maxLearnedReviewCardCount: this.config.maxLearnedReviewsPerDay,
 			learnedReviewedCount: 0,
-			dayTimestamp: 0,
+			dayTimestamp: NaN,
 			additionalLearnedReviewCount: 0,
 		},
+		hiddenNewCardsCount: 0,
 	}
 	private currentCardData: Readonly<SM2EngineCardData | null> = null
 
 	private readonly transition = new SM2EngineCardDataTransition(this.config)
+
+	private appendNewCards = async (count: number) => {
+		this.currentCardData = null
+		let lastCardId = this.sessionData.lastCardId
+
+		if (this.sessionData.hiddenNewCardsCount > 0) {
+			const newHiddenCardsCount = Math.max(
+				0,
+				this.sessionData.hiddenNewCardsCount - count
+			)
+			const newCount = count - this.sessionData.hiddenNewCardsCount
+
+			await this.updateSessionData((draft) => {
+				draft.hiddenNewCardsCount = newHiddenCardsCount
+			})
+
+			if (newCount <= 0) return this.sessionData.hiddenNewCardsCount
+			count = newCount
+		}
+
+		for (var i = 0; i < count; i++) {
+			const id = await this.source.getCardNext(lastCardId)
+			if (id === null) break
+			lastCardId = id
+			await this.cardStorage.appendNewCard(
+				id,
+				// subtract 2**31 here in order to stay SMI for as long as possible
+				// both in JS engine and in idb encoding(though I am not sure about 2nd one)
+				this.sessionData.polledCardCount + i - 2 ** 31
+			)
+		}
+
+		await this.updateSessionData((draft) => {
+			draft.lastCardId = lastCardId
+			draft.polledCardCount += i
+		})
+
+		return i
+	}
+
+	private discardNewCards = async (count: number) => {
+		this.currentCardData = null
+		const newCardCount = await this.cardStorage.getNewCardCount()
+
+		await this.updateSessionData((draft) => {
+			draft.hiddenNewCardsCount = Math.min(
+				newCardCount,
+				count + draft.hiddenNewCardsCount
+			)
+		})
+	}
 
 	private onMaybeNewDay = async () => {
 		const now = await this.getNowTimestamp()
@@ -61,30 +113,29 @@ export class SM2Engine<T>
 			await this.updateSessionData((draft) => {
 				draft.dailyData = {
 					maxLearnedReviewCardCount:
-						this.config.maxDailyReviewCardCount,
+						this.config.maxLearnedReviewsPerDay,
 					learnedReviewedCount: 0,
 					additionalLearnedReviewCount: 0,
 					dayTimestamp: this.clock.getDay(now),
 				}
 			})
 
-			let lastCardId = this.sessionData.lastCardId
+			const newCount = await this.cardStorage.getNewCardCount()
 
-			let newCount = (await this.cardStorage.getStorageStats(now))
-				.newCount
-
-			while (newCount < this.config.maxNewCardsPerDay) {
-				const id = await this.source.getCardNext(lastCardId)
-				if (id === null) break
-				await this.cardStorage.appendNewCard(id)
-				newCount++
-			}
+			await this.appendNewCards(
+				Math.max(0, this.config.maxNewCardsPerDay - newCount)
+			)
 		}
 	}
 
-	private loadTopCardData = async () => {
+	private loadCurrentCard = async () => {
 		const now = await this.getNowTimestamp()
-		const card = await this.cardStorage.getTopEngineCardData(now)
+		const newCardCount = await this.cardStorage.getNewCardCount()
+
+		const card = await this.cardStorage.getTopEngineCardData(
+			now,
+			newCardCount <= this.sessionData.hiddenNewCardsCount
+		)
 		if (!card) {
 			this.currentCardData = null
 			return
@@ -98,8 +149,9 @@ export class SM2Engine<T>
 			const reachedReviewLimit =
 				this.sessionData.dailyData.learnedReviewedCount >=
 				this.sessionData.dailyData.maxLearnedReviewCardCount
+
 			if (
-				this.sessionData.dailyData.additionalLearnedReviewCount >= 0 &&
+				this.sessionData.dailyData.additionalLearnedReviewCount > 0 &&
 				(reachedReviewLimit || !isDataForToday)
 			) {
 				await this.updateSessionData((draft) => {
@@ -154,6 +206,7 @@ export class SM2Engine<T>
 		callback: (draft: Draft<SM2EngineSessionData>) => void
 	) => {
 		this.sessionData = produce(this.sessionData, callback)
+		Object.freeze(this.sessionData)
 		await this.lowLevelStorage.setSessionData(this.sessionData)
 	}
 
@@ -169,7 +222,7 @@ export class SM2Engine<T>
 		async (): Promise<SM2EngineCardData | null> => {
 			if (this.currentCardData) return this.currentCardData
 
-			await this.loadTopCardData()
+			await this.loadCurrentCard()
 			return this.currentCardData
 		}
 
@@ -187,7 +240,20 @@ export class SM2Engine<T>
 					this.sessionData.dailyData.maxLearnedReviewCardCount,
 					storageStats.todayLearnedCount
 				),
+				newCount: Math.max(
+					0,
+					storageStats.newCount - this.sessionData.hiddenNewCardsCount
+				),
 			}
+		})
+	}
+
+	public getCurrentCardData = async (): Promise<SM2EngineCardData | null> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+			await this.onMaybeNewDay()
+
+			return await this.getOrLoadCurrentCardData()
 		})
 	}
 
@@ -211,25 +277,6 @@ export class SM2Engine<T>
 		})
 	}
 
-	public undo = async (): Promise<void> => {
-		return await this.lowLevelStorage.transaction(async () => {
-			await this.initialize()
-			// await this.onMaybeNewDay() // it's safer not to do new-day checking here
-			// although it should still work
-			// it may introduce inconsistencies, when card is to be backed from
-			// LEARNING/LEARNED to new state.
-
-			const res = await this.history.pop()
-			if (!res) return
-
-			// TODO(teawithsand): special treatment for new cards - put them in front of 
-			// all the new cards that are here right now?
-			//
-			// Leaving this as-is is so-so, but will work
-			await this.cardStorage.setEngineCardData(res)
-		})
-	}
-
 	public answer = async (answer: SM2EngineAnswer): Promise<void> => {
 		return await this.lowLevelStorage.transaction(async () => {
 			await this.initialize()
@@ -248,7 +295,44 @@ export class SM2Engine<T>
 
 			await this.history.push(currentCardData)
 			await this.cardStorage.setEngineCardData(newCardData)
-			await this.loadTopCardData()
+			await this.loadCurrentCard()
+		})
+	}
+
+	public undo = async (): Promise<void> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+			// await this.onMaybeNewDay() // it's safer not to do new-day checking here
+			// although it should still work
+			// it may introduce inconsistencies, when card is to be backed from
+			// LEARNING/LEARNED to new state.
+
+			this.currentCardData = null
+
+			const res = await this.history.pop()
+			if (!res) return
+
+			// Right now this undone card should be always at the first place in new queue
+			// since it must have lower total-index, as it was already processed from new to some other state,
+			// so any card that comes after it must have been processed already.
+			await this.cardStorage.setEngineCardData(res)
+		})
+	}
+
+	public addOrRemoveNewCards = async (n: number): Promise<void> => {
+		if (!isFinite(n) || Math.round(n) !== n)
+			throw new Error(`Invalid n=${n} provided`)
+		if (n === 0) return
+
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+			await this.onMaybeNewDay()
+
+			if (n > 0) {
+				await this.appendNewCards(Math.abs(n))
+			} else {
+				await this.discardNewCards(Math.abs(n))
+			}
 		})
 	}
 }
