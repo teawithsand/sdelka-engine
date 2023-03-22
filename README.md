@@ -1,7 +1,7 @@
 > Note: right now app using this engine is NIY. For now this project is only piece of code handling domain logic of such app.
 
 # WIP
-This project isn't production ready yet for a couple of reasons. One of them is that I have to untie it from [tws-libs](https://github.com/teawithsand/tws-libs) `tws-stl` in particular.
+This project isn't production ready yet for a couple of reasons. One of them is that I have to decouple it from [tws-libs](https://github.com/teawithsand/tws-libs) `tws-stl` in particular.
 
 # sdelka-engine
 
