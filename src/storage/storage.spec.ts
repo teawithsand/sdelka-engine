@@ -1,5 +1,6 @@
 import { generateUUID } from "@teawithsand/tws-stl"
-import { IDBStorageDB, IDBEngineStorage } from "./idb/storage"
+import { IDBStorageDB } from "./idb/db"
+import { IDBEngineStorage } from "./idb/storage"
 import { InMemoryEngineStorage } from "./memory/storage"
 import { GroupedQueue, GroupedQueueRangeLike } from "./queue"
 import { EngineStorage } from "./storage"
