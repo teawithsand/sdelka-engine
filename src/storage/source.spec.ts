@@ -1,4 +1,5 @@
 import { generateUUID } from "@teawithsand/tws-stl"
+import { IDBStorageDB, IndexedDBCardSource } from "./idb"
 import { InMemoryCardSource } from "./memory"
 import { AppendDeleteCardSource } from "./source"
 
@@ -7,7 +8,7 @@ type Card = {
 	i: number
 }
 
-const baseCards: Card[] = [...new Array(1000).keys()].map((i) => ({
+const baseCards: Card[] = [...new Array(100).keys()].map((i) => ({
 	id: generateUUID(),
 	i,
 }))
@@ -16,8 +17,12 @@ const testAppendDeleteCardSource = (
 	sourceFactory: () => AppendDeleteCardSource<Card>
 ) => {
 	let source: AppendDeleteCardSource<Card>
-	beforeEach(() => {
+	beforeEach(async () => {
 		source = sourceFactory()
+
+		for (const c of baseCards) {
+			await source.append(c)
+		}
 	})
 
 	it("can iterate through all cards", async () => {
@@ -105,5 +110,14 @@ const testAppendDeleteCardSource = (
 }
 
 describe("In-memory source", () => {
-	testAppendDeleteCardSource(() => new InMemoryCardSource(baseCards))
+	testAppendDeleteCardSource(() => new InMemoryCardSource<Card>([]))
+})
+
+describe("IDB source", () => {
+	testAppendDeleteCardSource(() => {
+		return new IndexedDBCardSource<Card>(
+			new IDBStorageDB("asdf1234"),
+			generateUUID()
+		)
+	})
 })
