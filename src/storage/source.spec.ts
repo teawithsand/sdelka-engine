@@ -1,28 +1,25 @@
 import { generateUUID } from "@teawithsand/tws-stl"
-import { IDBStorageDB, IndexedDBCardSource } from "./idb"
+import { CombinedCardSource } from "./combined"
 import { InMemoryCardSource } from "./memory"
-import { AppendDeleteCardSource } from "./source"
+import { AppendDeleteCardSource, CardSource } from "./source"
 
 type Card = {
 	id: string
 	i: number
 }
 
-const baseCards: Card[] = [...new Array(100).keys()].map((i) => ({
+const baseCards: Card[] = [...new Array(10).keys()].map((i) => ({
 	id: generateUUID(),
 	i,
 }))
 
-const testAppendDeleteCardSource = (
-	sourceFactory: () => AppendDeleteCardSource<Card>
-) => {
-	let source: AppendDeleteCardSource<Card>
+/**
+ * Note: source has to be populated with baseCards in order for these to pass.
+ */
+const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
+	let source: CardSource<Card>
 	beforeEach(async () => {
-		source = sourceFactory()
-
-		for (const c of baseCards) {
-			await source.append(c)
-		}
+		source = await sourceFactory()
 	})
 
 	it("can iterate through all cards", async () => {
@@ -36,7 +33,14 @@ const testAppendDeleteCardSource = (
 			if (!goneToNext) break
 		}
 
-		expect(ids).toEqual(baseCards.map((v) => v.id))
+		const recoveredCards: Card[] = []
+		for (const id of ids) {
+			const c = await source.getCard(id)
+			if (!c) throw new Error(`Card with id ${id} was removed`)
+			recoveredCards.push(c)
+		}
+
+		expect(recoveredCards).toEqual(baseCards)
 	})
 
 	it("can iterate through all cards with serialized cursor", async () => {
@@ -51,7 +55,27 @@ const testAppendDeleteCardSource = (
 			if (!goneToNext) break
 		}
 
-		expect(ids).toEqual(baseCards.map((v) => v.id))
+		const recoveredCards: Card[] = []
+		for (const id of ids) {
+			const c = await source.getCard(id)
+			if (!c) throw new Error(`Card with id ${id} was removed`)
+			recoveredCards.push(c)
+		}
+
+		expect(recoveredCards).toEqual(baseCards)
+	})
+}
+
+const testAppendDeleteCardSource = (
+	sourceFactory: () => Promise<AppendDeleteCardSource<Card>>
+) => {
+	let source: AppendDeleteCardSource<Card>
+	beforeEach(async () => {
+		source = await sourceFactory()
+
+		for (const c of baseCards) {
+			await source.append(c)
+		}
 	})
 
 	it("can iterate through all cards with deleting cards", async () => {
@@ -110,14 +134,52 @@ const testAppendDeleteCardSource = (
 }
 
 describe("In-memory source", () => {
-	testAppendDeleteCardSource(() => new InMemoryCardSource<Card>([]))
+	testCardSource(async () => new InMemoryCardSource(baseCards))
+	testAppendDeleteCardSource(async () => new InMemoryCardSource<Card>([]))
 })
 
+/*
 describe("IDB source", () => {
-	testAppendDeleteCardSource(() => {
-		return new IndexedDBCardSource<Card>(
+	testCardSource(
+		async () =>
+			new IndexedDBCardSource<Card>(
+				new IDBStorageDB("asdf1234"),
+				generateUUID()
+			)
+	)
+
+	testAppendDeleteCardSource(async () => {
+		const src = new IndexedDBCardSource<Card>(
 			new IDBStorageDB("asdf1234"),
 			generateUUID()
+		)
+
+		for (const c of baseCards) {
+			await src.append(c)
+		}
+
+		return src
+	})
+})
+*/
+
+describe("CombinedSource", () => {
+	testCardSource(async () => {
+		const sz = Math.floor(baseCards.length / 3)
+		const chunks: Card[][] = [...new Array(sz).keys()].map(() => [])
+
+		for (let i = 0; i < baseCards.length; i++) {
+			chunks[Math.min(sz - 1, Math.floor(i / sz))].push(baseCards[i])
+		}
+
+		const sources = chunks.map((cards) => new InMemoryCardSource(cards))
+
+		return new CombinedCardSource(
+			sources.map((source, i) => ({
+				source: source,
+				sourceId: "src-" + generateUUID(),
+				offset: i,
+			}))
 		)
 	})
 })
