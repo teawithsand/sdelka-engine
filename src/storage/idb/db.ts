@@ -26,12 +26,6 @@ export type QueueEntryDBEntity = {
 	data: any
 }
 
-export type CardCollectionDBEntity = {
-    id: string
-	version: number
-	name: string
-}
-
 export type CardCollectionEntryDBEntity = {
 	id: string
 	collectionId: string
@@ -62,7 +56,6 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 	public readonly cards!: Table<CardStorageEntryDBEntity<CD>, string>
 	public readonly queues!: Table<QueueEntryDBEntity, string>
 
-	public readonly cardCollections!: Table<CardCollectionDBEntity>
 	public readonly cardCollectionEntries!: Table<CardCollectionEntryDBEntity>
 
 	constructor(name: string) {
@@ -72,7 +65,6 @@ export class IDBStorageDB<CD, SD> extends Dexie {
 			cards: "[session+id]",
 			queues: "[session+name+id], session, [session+name], [session+name+group], [session+name+priority], [session+name+group+priority]",
 			
-			cardCollections: "id",
 			cardCollectionEntries: "[collectionId+id], [collectionId+version]",
 		})
 	}

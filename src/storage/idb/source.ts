@@ -1,7 +1,7 @@
 import { throwExpression } from "@teawithsand/tws-stl"
 import { MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
 import { AppendDeleteCardSource, CardSource, CardSourceCursor } from "../source"
-import { CardCollectionEntryDBEntity, IDBStorageDB } from "./db"
+import { IDBStorageDB } from "./db"
 
 interface Access {
 	readonly collectionId: string
@@ -59,10 +59,7 @@ class IndexedDBCardSourceCursor<T extends { readonly id: string }>
 				this.access.db.cardCollectionEntries
 					.where("[collectionId+version]")
 					.between(
-						[
-							this.access.collectionId,
-							startSearchVersion,
-						],
+						[this.access.collectionId, startSearchVersion],
 						[this.access.collectionId, MAX_IDB_KEY],
 						true,
 						true
@@ -209,29 +206,21 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 		this.isInitialized = true
 	}
 
-	private getAndIncrementVersionCounter = async () => {
+	private getNextVersion = async () => {
 		return await this.db.transaction(
 			"rw?",
-			[this.db.cardCollections],
+			[this.db.cardCollectionEntries],
 			async () => {
-				let collection = await this.db.cardCollections
-					.where("id")
-					.equals(this.collectionId)
-					.first()
-				if (!collection) {
-					collection = {
-						id: this.collectionId,
-						name: `Card collection ${this.collectionId}`,
-						version: -(2 ** 31),
-					}
-				}
+				const entry = await this.db.cardCollectionEntries
+					.where("[collectionId+version]")
+					.between(
+						[this.collectionId, MIN_IDB_KEY],
+						[this.collectionId, MAX_IDB_KEY]
+					)
+					.last()
 
-				const version = collection.version
-
-				collection.version++
-				await this.db.cardCollections.put(collection)
-
-				return version
+				if (!entry) return -(2 ** 31)
+				return entry.version + 1
 			}
 		)
 	}
@@ -300,9 +289,9 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 
 		await this.db.transaction(
 			"rw",
-			[this.db.cardCollections, this.db.cardCollectionEntries],
+			[this.db.cardCollectionEntries],
 			async () => {
-				const version = await this.getAndIncrementVersionCounter()
+				const version = await this.getNextVersion()
 				await this.db.cardCollectionEntries.put({
 					version: version,
 					collectionId: this.collectionId,
