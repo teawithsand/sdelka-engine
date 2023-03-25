@@ -37,7 +37,7 @@ class InMemoryCardSourceCursor<T extends { readonly id: string }>
 
 		return n
 	}
-	
+
 	left = async () => {
 		const lastLoadedVersion = this.data.lastLoadedVersion ?? -Infinity
 		return [
@@ -105,6 +105,11 @@ export class InMemoryCardSource<T extends { readonly id: string }>
 			data: v,
 			version: this.versionCounter++,
 		}))
+	}
+
+	clear = async () => {
+		this.versionCounter = -(2 ** 31)
+		this.entries = []
 	}
 
 	private makeAccess = (): Access => {

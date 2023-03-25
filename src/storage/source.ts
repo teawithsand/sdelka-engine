@@ -42,4 +42,10 @@ export interface CardSource<T> {
 export interface AppendDeleteCardSource<T> extends CardSource<T> {
 	append: (data: T) => Promise<void>
 	delete: (id: CardId) => Promise<void>
+
+	/**
+	 * Disposes all resources associated with that source.
+	 * Any kind of cursor, which was associated with it should be used no more, as it's UB.
+	 */
+	clear: () => Promise<void>
 }

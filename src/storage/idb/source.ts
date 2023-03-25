@@ -304,4 +304,26 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 			.equals([this.collectionId, id])
 			.delete()
 	}
+
+	clear = async () => {
+		await this.db.transaction(
+			"rw",
+			[this.db.cardCollectionEntries, this.db.cardCollections],
+			async () => {
+				await this.db.cardCollections
+					.where("id")
+					.equals(this.collectionId)
+					.delete()
+				await this.db.cardCollectionEntries
+					.where("[collectionId+id]")
+					.between(
+						[this.collectionId, MIN_IDB_KEY],
+						[this.collectionId, MAX_IDB_KEY],
+						true,
+						true
+					)
+					.delete()
+			}
+		)
+	}
 }
