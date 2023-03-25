@@ -1,11 +1,11 @@
 > Note: right now app using this engine is NIY. For now this project is only piece of code handling domain logic of such app.
 
-# WIP
-This project isn't production ready yet for a couple of reasons. One of them is that I have to decouple it from [tws-libs](https://github.com/teawithsand/tws-libs) `tws-stl` in particular.
-
 # sdelka-engine
 
 Sdelka is [anki](https://github.com/ankitects/anki)-like [SRS](https://en.wikipedia.org/wiki/Spaced_repetition) engine, which implements another variation of SM2 algorithm. It's written entirely in typescript and is web-compatible with IDB-based implementation of storage.
+
+# Stability
+Right now sdelka-engine is ready to use, but it's APIs stability is not yet guaranteed as it's at its early stages of development. APIs here are going to be as stable as I need to get them working with [sdelka](https://github.com/teawithsand/sdelka).
 
 # Docs / Examples
 Once you have cloned this project you can `npm run docs` in order to use `typedoc` to generate docs for this project.
