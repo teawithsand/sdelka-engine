@@ -1,5 +1,10 @@
 import Dexie, { Table } from "dexie"
-import { IDBComparable, idbComparator, MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
+import {
+	IDBComparable,
+	idbComparator,
+	MAX_IDB_KEY,
+	MIN_IDB_KEY,
+} from "../../pubutil"
 import { dispatchRange } from "../../util/range"
 import { GroupedQueueRangeLike } from "../queue"
 
@@ -26,12 +31,17 @@ export type QueueEntryDBEntity = {
 	data: any
 }
 
+export type CardCollectionDBEntity = {
+	id: string
+	version: number
+}
+
 export type CardCollectionEntryDBEntity = {
 	id: string
 	collectionId: string
 	version: number
 
-    data: any
+	data: any
 }
 
 /**
@@ -53,7 +63,11 @@ export class IDBStorageDB extends Dexie {
 	public readonly cards!: Table<CardStorageEntryDBEntity, string>
 	public readonly queues!: Table<QueueEntryDBEntity, string>
 
-	public readonly cardCollectionEntries!: Table<CardCollectionEntryDBEntity>
+	public readonly cardCollections!: Table<CardCollectionDBEntity, string>
+	public readonly cardCollectionEntries!: Table<
+		CardCollectionEntryDBEntity,
+		string
+	>
 
 	constructor(name: string) {
 		super(name)
@@ -61,7 +75,8 @@ export class IDBStorageDB extends Dexie {
 			sessions: "session",
 			cards: "[session+id]",
 			queues: "[session+name+id], session, [session+name], [session+name+group], [session+name+priority], [session+name+group+priority]",
-			
+
+			cardCollections: "id",
 			cardCollectionEntries: "[collectionId+id], [collectionId+version]",
 		})
 	}

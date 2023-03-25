@@ -194,33 +194,33 @@ class IndexedDBCardSourceCursor<T extends { readonly id: string }>
 export class IndexedDBCardSource<T extends { readonly id: string }>
 	implements CardSource<T>, AppendDeleteCardSource<T>
 {
-	private isInitialized = false
 	constructor(
 		private readonly db: IDBStorageDB,
 		public readonly collectionId: string
 	) {}
 
-	private initialize = async () => {
-		if (this.isInitialized) return
-
-		this.isInitialized = true
-	}
-
-	private getNextVersion = async () => {
+	private getNextVersionAndIncrement = async () => {
 		return await this.db.transaction(
 			"rw?",
-			[this.db.cardCollectionEntries],
+			[this.db.cardCollections],
 			async () => {
-				const entry = await this.db.cardCollectionEntries
-					.where("[collectionId+version]")
-					.between(
-						[this.collectionId, MIN_IDB_KEY],
-						[this.collectionId, MAX_IDB_KEY]
-					)
-					.last()
+				let collection = await this.db.cardCollections
+					.where("id")
+					.equals(this.collectionId)
+					.first()
+				if (!collection) {
+					collection = {
+						id: this.collectionId,
+						version: -(2 ** 31),
+					}
+				}
 
-				if (!entry) return -(2 ** 31)
-				return entry.version + 1
+				const version = collection.version
+
+				collection.version++
+				await this.db.cardCollections.put(collection)
+
+				return version
 			}
 		)
 	}
@@ -229,7 +229,7 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 		const self = this
 
 		return {
-			initialize: self.initialize,
+			initialize: async () => {},
 			collectionId: self.collectionId,
 			get db() {
 				return self.db
@@ -238,8 +238,6 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 	}
 
 	getCard = async (cardId: string): Promise<T | null> => {
-		await this.initialize()
-
 		const res = await this.db.cardCollectionEntries
 			.where("[collectionId+id]")
 			.equals([this.collectionId, cardId])
@@ -285,13 +283,11 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 	}
 
 	append = async (data: T): Promise<void> => {
-		await this.initialize()
-
 		await this.db.transaction(
 			"rw",
-			[this.db.cardCollectionEntries],
+			[this.db.cardCollectionEntries, this.db.cardCollections],
 			async () => {
-				const version = await this.getNextVersion()
+				const version = await this.getNextVersionAndIncrement()
 				await this.db.cardCollectionEntries.put({
 					version: version,
 					collectionId: this.collectionId,
