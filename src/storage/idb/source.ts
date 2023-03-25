@@ -1,6 +1,6 @@
 import { throwExpression } from "@teawithsand/tws-stl"
 import { MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
-import { AppendDeleteCardSource, CardSource, CardSourceCursor } from "../source"
+import { MutableCardSource, CardSource, CardSourceCursor } from "../source"
 import { IDBStorageDB } from "./db"
 
 interface Access {
@@ -192,7 +192,7 @@ class IndexedDBCardSourceCursor<T extends { readonly id: string }>
 }
 
 export class IndexedDBCardSource<T extends { readonly id: string }>
-	implements CardSource<T>, AppendDeleteCardSource<T>
+	implements CardSource<T>, MutableCardSource<T>
 {
 	constructor(
 		private readonly db: IDBStorageDB,

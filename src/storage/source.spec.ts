@@ -2,7 +2,7 @@ import { generateUUID, throwExpression } from "@teawithsand/tws-stl"
 import { CombinedCardSource } from "./combined"
 import { IDBStorageDB, IndexedDBCardSource } from "./idb"
 import { InMemoryCardSource } from "./memory"
-import { AppendDeleteCardSource, CardSource } from "./source"
+import { MutableCardSource, CardSource } from "./source"
 
 type Card = {
 	id: string
@@ -201,10 +201,10 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 	})
 }
 
-const testAppendDeleteCardSource = (
-	sourceFactory: () => Promise<AppendDeleteCardSource<Card>>
+const testMutableCardSource = (
+	sourceFactory: () => Promise<MutableCardSource<Card>>
 ) => {
-	let source: AppendDeleteCardSource<Card>
+	let source: MutableCardSource<Card>
 	beforeEach(async () => {
 		source = await sourceFactory()
 
@@ -272,7 +272,7 @@ const testAppendDeleteCardSource = (
 
 describe("In-memory source", () => {
 	testCardSource(async () => new InMemoryCardSource(baseCards))
-	testAppendDeleteCardSource(async () => new InMemoryCardSource<Card>([]))
+	testMutableCardSource(async () => new InMemoryCardSource<Card>([]))
 })
 
 describe("IDB source", () => {
@@ -289,7 +289,7 @@ describe("IDB source", () => {
 		return src
 	})
 
-	testAppendDeleteCardSource(async () => {
+	testMutableCardSource(async () => {
 		const src = new IndexedDBCardSource<Card>(
 			new IDBStorageDB("asdf1234"),
 			generateUUID()

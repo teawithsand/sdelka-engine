@@ -1,4 +1,4 @@
-import { AppendDeleteCardSource, CardSource, CardSourceCursor } from "../source"
+import { MutableCardSource, CardSource, CardSourceCursor } from "../source"
 
 type Entry<T> = {
 	data: T
@@ -95,7 +95,7 @@ class InMemoryCardSourceCursor<T extends { readonly id: string }>
 }
 
 export class InMemoryCardSource<T extends { readonly id: string }>
-	implements CardSource<T>, AppendDeleteCardSource<T>
+	implements CardSource<T>, MutableCardSource<T>
 {
 	private versionCounter: number = -(2 ** 31)
 	private entries: Entry<T>[]

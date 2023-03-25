@@ -39,7 +39,7 @@ export interface CardSource<T> {
 /**
  * CardSource, which may have cards deleted from and appended to.
  */
-export interface AppendDeleteCardSource<T> extends CardSource<T> {
+export interface MutableCardSource<T> extends CardSource<T> {
 	append: (data: T) => Promise<void>
 	delete: (id: CardId) => Promise<void>
 
