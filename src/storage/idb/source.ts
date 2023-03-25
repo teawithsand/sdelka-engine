@@ -5,7 +5,7 @@ import { IDBStorageDB } from "./db"
 
 interface Access {
 	readonly collectionId: string
-	readonly db: IDBStorageDB<any, any>
+	readonly db: IDBStorageDB
 	readonly initialize: () => Promise<void>
 }
 
@@ -196,7 +196,7 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 {
 	private isInitialized = false
 	constructor(
-		private readonly db: IDBStorageDB<any, any>,
+		private readonly db: IDBStorageDB,
 		public readonly collectionId: string
 	) {}
 

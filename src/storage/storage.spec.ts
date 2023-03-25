@@ -230,8 +230,6 @@ const testStorage = (storageFactory: () => EngineStorage<Data, Data>) => {
 			i++
 		}
 	})
-
-	// TODO(teawithsand): more tests for storage
 }
 
 describe("In-memory storage", () => {
@@ -239,7 +237,7 @@ describe("In-memory storage", () => {
 })
 
 describe("IDB storage", () => {
-	const db = new IDBStorageDB<any, any>("db-0")
+	const db = new IDBStorageDB("db-0")
 	testStorage(() => new IDBEngineStorage(db, generateUUID()))
 
 	// TODO(teawithsand): tests for conflicting session names

@@ -1,7 +1,4 @@
-import {
-	GroupedQueue,
-	GroupedQueueElementPropsExtractor
-} from "../queue"
+import { GroupedQueue, GroupedQueueElementPropsExtractor } from "../queue"
 import { EngineStorage } from "../storage"
 import { IDBStorageDB } from "./db"
 
@@ -10,7 +7,7 @@ import { IDBStorageDB } from "./db"
  */
 export class IDBEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 	constructor(
-		private readonly db: IDBStorageDB<CD, SD>,
+		private readonly db: IDBStorageDB,
 		private readonly session: string
 	) {}
 	transaction = async <R>(cb: () => Promise<R>): Promise<R> => {

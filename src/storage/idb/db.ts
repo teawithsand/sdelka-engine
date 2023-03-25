@@ -3,16 +3,16 @@ import { IDBComparable, idbComparator, MAX_IDB_KEY, MIN_IDB_KEY } from "../../pu
 import { dispatchRange } from "../../util/range"
 import { GroupedQueueRangeLike } from "../queue"
 
-export type SessionStorageEntryDBEntity<SD> = {
+export type SessionStorageEntryDBEntity = {
 	session: string // in fact session could be id, but whatever
-	value: SD
+	value: any
 }
 
-export type CardStorageEntryDBEntity<SD> = {
+export type CardStorageEntryDBEntity = {
 	id: string
 	session: string
 
-	value: SD
+	value: any
 }
 
 export type QueueEntryDBEntity = {
@@ -48,12 +48,9 @@ export type CardCollectionEntryDBEntity = {
  * This class is to-be-used by IDBEngineStorage. You probably do not want to use it on it's own.
  * It's also subject to more frequent changes compared to EngineStorage.
  */
-export class IDBStorageDB<CD, SD> extends Dexie {
-	// TODO(teawithsand): get rid of these generic types; replace them with any 
-	//  directly in underlying types
-
-	public readonly sessions!: Table<SessionStorageEntryDBEntity<SD>, string>
-	public readonly cards!: Table<CardStorageEntryDBEntity<CD>, string>
+export class IDBStorageDB extends Dexie {
+	public readonly sessions!: Table<SessionStorageEntryDBEntity, string>
+	public readonly cards!: Table<CardStorageEntryDBEntity, string>
 	public readonly queues!: Table<QueueEntryDBEntity, string>
 
 	public readonly cardCollectionEntries!: Table<CardCollectionEntryDBEntity>
