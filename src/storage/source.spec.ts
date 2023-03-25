@@ -23,6 +23,8 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 		source = await sourceFactory()
 	})
 
+	// TODO(teawithsand): specialized test for .left method besides testing with advance
+
 	it("stays at the last id after iteration finished", async () => {
 		const lastCard = baseCards[baseCards.length - 1]
 
@@ -151,6 +153,7 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 
 			let pos = -1
 			let cursorPos = -1
+			let sumShiftSoFar = 0
 			const limit = baseCards.length
 
 			const expectedCards = []
@@ -158,6 +161,7 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 
 			let advancedByNonZero = false
 			for (const delta of set) {
+				sumShiftSoFar += delta
 				advancedByNonZero = advancedByNonZero || delta > 0
 				const by = await cursor.advance(delta)
 				pos = Math.min(limit - 1, pos + delta)
@@ -167,6 +171,10 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 				if (pos >= 0) {
 					expectedCards.push(baseCards[pos])
 				}
+
+				expect(await cursor.left()).toEqual(
+					Math.max(0, baseCards.length - sumShiftSoFar)
+				)
 
 				const currentId = cursor.currentId
 				if (currentId === null && advancedByNonZero)
