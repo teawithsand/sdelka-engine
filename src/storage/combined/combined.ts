@@ -24,6 +24,48 @@ class CombinedCardSourceCursor<T> implements CardSourceCursor {
 		public readonly cursors: Readonly<Readonly<CursorWrapper<T>>[]>,
 		public readonly source: CombinedCardSource<T>
 	) {}
+
+	left = async () => {
+		let s = 0
+		for (const c of this.cursors) {
+			s += await c.cursor.left()
+		}
+
+		return s
+	}
+
+	advance = async (n: number) => {
+		if (!isFinite(n) || n < 0 || Math.round(n) !== n)
+			throw new Error(
+				`Invalid value to advance by was provided; got ${n}`
+			)
+
+		// There is no good way to implement this advance to be fast
+		// for compound source, fortunately it's not required
+		// since user will only browse non-compound sources by design
+
+		// TODO(teawithsand): now there is with left method; implement it
+		for (let i = 0; i < n; i++) {
+			if (!(await this.next())) {
+				return i
+			}
+		}
+		return n
+	}
+
+	clone = () => {
+		return new CombinedCardSourceCursor<T>(
+			{ ...this.data },
+			this.cursors.map(
+				(c): CursorWrapper<T> => ({
+					...c,
+					cursor: c.cursor.clone(),
+				})
+			),
+			this.source
+		) as this
+	}
+
 	refresh = async (): Promise<void> => {
 		for (const c of this.cursors) {
 			await c.cursor.refresh()

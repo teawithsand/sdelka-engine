@@ -1,5 +1,6 @@
-import { generateUUID } from "@teawithsand/tws-stl"
+import { generateUUID, throwExpression } from "@teawithsand/tws-stl"
 import { CombinedCardSource } from "./combined"
+import { IDBStorageDB, IndexedDBCardSource } from "./idb"
 import { InMemoryCardSource } from "./memory"
 import { AppendDeleteCardSource, CardSource } from "./source"
 
@@ -8,7 +9,7 @@ type Card = {
 	i: number
 }
 
-const baseCards: Card[] = [...new Array(10).keys()].map((i) => ({
+const baseCards: Card[] = [...new Array(20).keys()].map((i) => ({
 	id: generateUUID(),
 	i,
 }))
@@ -20,6 +21,38 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 	let source: CardSource<Card>
 	beforeEach(async () => {
 		source = await sourceFactory()
+	})
+
+	it("stays at the last id after iteration finished", async () => {
+		const lastCard = baseCards[baseCards.length - 1]
+
+		{
+			const cursor = source.newCursor()
+			for (let i = 0; i < baseCards.length + 1; i++) {
+				await cursor.next()
+			}
+
+			const id =
+				cursor.currentId ??
+				throwExpression(
+					new Error(`last id must not be null if there are cards`)
+				)
+			expect(await source.getCard(id)).toEqual(lastCard)
+		}
+
+		{
+			const cursor = source.newCursor()
+			for (let i = 0; i < baseCards.length * 2; i++) {
+				await cursor.next()
+			}
+
+			const id =
+				cursor.currentId ??
+				throwExpression(
+					new Error(`last id must not be null if there are cards`)
+				)
+			expect(await source.getCard(id)).toEqual(lastCard)
+		}
 	})
 
 	it("can iterate through all cards", async () => {
@@ -64,6 +97,100 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 
 		expect(recoveredCards).toEqual(baseCards)
 	})
+
+	it("can iterate through all cards with cloned cursor", async () => {
+		let cursor = source.newCursor()
+		const ids = []
+		for (;;) {
+			const clone = cursor.clone()
+			await clone.next()
+
+			if (cursor.currentId !== null) {
+				ids.push(cursor.currentId)
+			}
+			const goneToNext = await cursor.next()
+			if (!goneToNext) break
+		}
+
+		const recoveredCards: Card[] = []
+		for (const id of ids) {
+			const c = await source.getCard(id)
+			if (!c) throw new Error(`Card with id ${id} was removed`)
+			recoveredCards.push(c)
+		}
+
+		expect(recoveredCards).toEqual(baseCards)
+	})
+
+	it("can iterate through all cards with advancing cursor", async () => {
+		const advanceSets = [
+			[4, 1, 3, 0, 0, 6, 1, 1, 4, 0],
+			[2, 1, 1, 0, 0, 0, 2, 5, 0, 1],
+			[0, 4, 7, 2, 1, 5, 10, 1, 2, 6],
+			[0, 0, 0, 0, 2, 1, 1, 8, 9, 0],
+			[1, 2, 2, 1, 2, 8, 8, 1, 5, 6],
+			[0, 2, 2, 7, 3, 2, 3, 0, 9, 2],
+			[5, 0, 4, 8, 2, 5, 7, 2, 0, 8],
+			[4, 0, 0, 3, 8, 0, 0, 1, 3, 3],
+			[1, 0, 9, 5, 1, 9, 2, 1, 3, 2],
+			[1, 1, 2, 0, 2, 0, 0, 0, 1, 0],
+			[0, 0, 0, 0, 4, 9, 0, 0, 4, 2],
+			[0, 2, 2, 0, 1, 4, 7, 7, 5, 0],
+			[0, 0, 1, 1, 1, 0, 0, 3, 3, 2],
+			[5, 6, 2, 1, 3, 0, 1, 0, 0, 0],
+			[3, 2, 4, 2, 4, 5, 6, 0, 8, 6],
+			[6, 5, 4, 3, 2, 2, 5, 1, 2, 0],
+			[3, 3, 2, 2, 1, 1, 1, 2, 0, 0],
+			[2, 5, 1, 3, 3, 0, 1, 5, 8, 4],
+			[2, 5, 9, 5, 2, 0, 0, 6, 1, 0],
+			[1, 2, 0, 1, 7, 1, 0, 0, 9, 10],
+		]
+
+		for (const set of advanceSets) {
+			const cursor = source.newCursor()
+
+			let pos = -1
+			let cursorPos = -1
+			const limit = baseCards.length
+
+			const expectedCards = []
+			const gotIds = []
+
+			let advancedByNonZero = false
+			for (const delta of set) {
+				advancedByNonZero = advancedByNonZero || delta > 0
+				const by = await cursor.advance(delta)
+				pos = Math.min(limit - 1, pos + delta)
+				cursorPos += by
+
+				expect(pos).toEqual(cursorPos)
+				if (pos >= 0) {
+					expectedCards.push(baseCards[pos])
+				}
+
+				const currentId = cursor.currentId
+				if (currentId === null && advancedByNonZero)
+					throw new Error(`Got null id where it's not allowed`)
+				if (currentId !== null) {
+					gotIds.push(
+						cursor.currentId ??
+							throwExpression(new Error("Unreachable code"))
+					)
+				}
+			}
+
+			const recoveredGotCards: Card[] = []
+			for (const id of gotIds) {
+				const c = await source.getCard(id)
+				if (!c) throw new Error(`Card with id ${id} was removed`)
+				recoveredGotCards.push(c)
+			}
+
+			expect(recoveredGotCards.length).toEqual(expectedCards.length)
+			expect(recoveredGotCards).toEqual(expectedCards)
+			expect(expectedCards.length).toBeGreaterThan(0)
+		}
+	})
 }
 
 const testAppendDeleteCardSource = (
@@ -98,6 +225,8 @@ const testAppendDeleteCardSource = (
 
 		expect(ids).toEqual(baseCards.map((v) => v.id))
 	})
+
+	// TODO(teawithsand): advance + delete test for sources
 
 	it("can iterate through all cards while skipping deleted", async () => {
 		const cursor = source.newCursor()
@@ -138,15 +267,19 @@ describe("In-memory source", () => {
 	testAppendDeleteCardSource(async () => new InMemoryCardSource<Card>([]))
 })
 
-/*
 describe("IDB source", () => {
-	testCardSource(
-		async () =>
-			new IndexedDBCardSource<Card>(
-				new IDBStorageDB("asdf1234"),
-				generateUUID()
-			)
-	)
+	testCardSource(async () => {
+		const src = new IndexedDBCardSource<Card>(
+			new IDBStorageDB("asdf1234"),
+			generateUUID()
+		)
+
+		for (const c of baseCards) {
+			await src.append(c)
+		}
+
+		return src
+	})
 
 	testAppendDeleteCardSource(async () => {
 		const src = new IndexedDBCardSource<Card>(
@@ -161,7 +294,6 @@ describe("IDB source", () => {
 		return src
 	})
 })
-*/
 
 describe("CombinedSource", () => {
 	testCardSource(async () => {

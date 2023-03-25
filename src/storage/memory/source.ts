@@ -22,6 +22,40 @@ class InMemoryCardSourceCursor<T extends { readonly id: string }>
 		public readonly source: InMemoryCardSource<T>,
 		private readonly access: Access
 	) {}
+
+	advance = async (n: number) => {
+		if (!isFinite(n) || n < 0 || Math.round(n) !== n)
+			throw new Error(
+				`Invalid value to advance by was provided; got ${n}`
+			)
+
+		for (let i = 0; i < n; i++) {
+			if (!(await this.next())) {
+				return i
+			}
+		}
+
+		return n
+	}
+	
+	left = async () => {
+		const lastLoadedVersion = this.data.lastLoadedVersion ?? -Infinity
+		return [
+			0, // add these, so that if entries are empty list, nothing happens
+			0,
+			...this.access.entries.map((e) =>
+				e.version > lastLoadedVersion ? 1 : 0
+			),
+		].reduce((a, b) => a + b)
+	}
+	clone = () => {
+		return new InMemoryCardSourceCursor(
+			{ ...this.data },
+			this.source,
+			this.access
+		) as this
+	}
+
 	refresh = async (): Promise<void> => {
 		if (this.data.currentId === null) return
 		if (
