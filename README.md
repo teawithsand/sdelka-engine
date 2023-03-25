@@ -1,5 +1,3 @@
-> Note: right now app using this engine is NIY. For now this project is only piece of code handling domain logic of such app.
-
 # sdelka-engine
 
 Sdelka is [anki](https://github.com/ankitects/anki)-like [SRS](https://en.wikipedia.org/wiki/Spaced_repetition) engine, which implements another variation of SM2 algorithm. It's written entirely in typescript and is web-compatible with IDB-based implementation of storage.
