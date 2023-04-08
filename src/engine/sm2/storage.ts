@@ -1,6 +1,6 @@
-import { TimestampMs } from "@teawithsand/tws-stl"
 import { GroupedQueue } from "../../storage/queue"
 import { CardId } from "../../storage/storage"
+import { TimestampMs } from "../../util/stl"
 import { Clock } from "../clock"
 import {
 	SM2CardType,

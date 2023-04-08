@@ -1,4 +1,4 @@
-import { generateUUID, throwExpression } from "@teawithsand/tws-stl"
+import { generateUUID, throwExpression } from "../util/stl"
 import { CombinedCardSource } from "./combined"
 import { IDBStorageDB, IndexedDBCardSource } from "./idb"
 import { InMemoryCardSource } from "./memory"

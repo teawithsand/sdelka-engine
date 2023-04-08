@@ -1,5 +1,5 @@
-import { generateUUID, TimestampMs } from "@teawithsand/tws-stl"
 import { InMemoryEngineStorage } from "../../storage/memory/storage"
+import { TimestampMs, generateUUID } from "../../util/stl"
 import { DebugClock } from "../clock"
 import { SM2CardType } from "./defines"
 import { SM2EngineQueueElementExtractor } from "./queues"

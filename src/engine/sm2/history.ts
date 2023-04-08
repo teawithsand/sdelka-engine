@@ -1,8 +1,8 @@
-import { generateUUID } from "@teawithsand/tws-stl"
 import {
 	GroupedQueue,
 	GroupedQueueElementPropsExtractor,
 } from "../../storage/queue"
+import { generateUUID } from "../../util/stl"
 import { Clock } from "../clock"
 import { SM2EngineCardData } from "./defines"
 

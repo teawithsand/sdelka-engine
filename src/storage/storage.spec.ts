@@ -1,4 +1,4 @@
-import { generateUUID } from "@teawithsand/tws-stl"
+import { generateUUID } from "../util/stl"
 import { IDBStorageDB } from "./idb/db"
 import { IDBEngineStorage } from "./idb/storage"
 import { InMemoryEngineStorage } from "./memory/storage"

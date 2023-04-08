@@ -1,5 +1,5 @@
-import { getNowTimestamp, TimestampMs } from "@teawithsand/tws-stl"
 import { TimeMs } from "../pubutil/time"
+import { TimestampMs, getNowTimestamp } from "../util/stl"
 
 /**
  * Like TimestampMs, but expressed in days.
@@ -32,6 +32,7 @@ export interface Clock {
 	 * Returns first timestamp of passed day number.
 	 */
 	getStartDayTimestamp: (dayTs: DayTimestamp) => TimestampMs
+
 }
 
 /**

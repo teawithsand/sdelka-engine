@@ -1,4 +1,4 @@
-import { throwExpression } from "@teawithsand/tws-stl"
+import { throwExpression } from "./stl"
 
 /**
  * Helper for making in-memory transactions.

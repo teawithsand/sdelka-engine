@@ -1,5 +1,5 @@
-import { throwExpression } from "@teawithsand/tws-stl"
 import { MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
+import { throwExpression } from "../../util/stl"
 import { MutableCardSource, CardSource, CardSourceCursor } from "../source"
 import { IDBStorageDB } from "./db"
 

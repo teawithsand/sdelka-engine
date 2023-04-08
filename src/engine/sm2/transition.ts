@@ -1,4 +1,3 @@
-import { TimestampMs } from "@teawithsand/tws-stl"
 import produce from "immer"
 import {
 	SM2CardType,
@@ -6,6 +5,7 @@ import {
 	SM2EngineCardData,
 	SM2EngineConfig,
 } from "./defines"
+import { TimestampMs } from "../../util/stl"
 
 export class SM2EngineCardDataTransition {
 	constructor(protected readonly config: SM2EngineConfig) {}

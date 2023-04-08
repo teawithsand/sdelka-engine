@@ -1,4 +1,3 @@
-import { throwExpression, TimestampMs } from "@teawithsand/tws-stl"
 import { Draft, produce } from "immer"
 import { CardSource, CardSourceCursor } from "../../storage/source"
 import { EngineStorage } from "../../storage/storage"
@@ -20,6 +19,7 @@ import {
 import { SM2EngineQueueElementExtractor as SM2EngineCardQueueElementExtractor } from "./queues"
 import { SM2EngineStorage as SM2EngineCardStorage } from "./storage"
 import { SM2EngineCardDataTransition } from "./transition"
+import { TimestampMs, throwExpression } from "../../util/stl"
 
 export class SM2Engine<T>
 	implements Engine<T, SM2EngineAnswer, SM2EngineStats>
