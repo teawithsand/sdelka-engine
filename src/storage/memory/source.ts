@@ -1,4 +1,9 @@
-import { MutableCardSource, CardSource, CardSourceCursor } from "../source"
+import {
+	MutableCardSource,
+	CardSource,
+	CardSourceCursor,
+	MetadataCardSource,
+} from "../source"
 
 type Entry<T> = {
 	data: T
@@ -14,12 +19,12 @@ interface InMemoryCursorData {
 	currentId: string | null
 }
 
-class InMemoryCardSourceCursor<T extends { readonly id: string }>
+class InMemoryCardSourceCursor<T extends { readonly id: string }, M>
 	implements CardSourceCursor
 {
 	constructor(
 		public data: InMemoryCursorData,
-		public readonly source: InMemoryCardSource<T>,
+		public readonly source: InMemoryCardSource<T, M>,
 		private readonly access: Access
 	) {}
 
@@ -49,7 +54,7 @@ class InMemoryCardSourceCursor<T extends { readonly id: string }>
 		].reduce((a, b) => a + b)
 	}
 	clone = () => {
-		return new InMemoryCardSourceCursor(
+		return new InMemoryCardSourceCursor<T, M>(
 			{ ...this.data },
 			this.source,
 			this.access
@@ -94,11 +99,12 @@ class InMemoryCardSourceCursor<T extends { readonly id: string }>
 	}
 }
 
-export class InMemoryCardSource<T extends { readonly id: string }>
-	implements CardSource<T>, MutableCardSource<T>
+export class InMemoryCardSource<T extends { readonly id: string }, M = void>
+	implements CardSource<T>, MutableCardSource<T>, MetadataCardSource<T, M>
 {
 	private versionCounter: number = -(2 ** 31)
 	private entries: Entry<T>[]
+	private metadata: M | null = null
 
 	constructor(entries: T[]) {
 		this.entries = entries.map((v) => ({
@@ -110,6 +116,7 @@ export class InMemoryCardSource<T extends { readonly id: string }>
 	clear = async () => {
 		this.versionCounter = -(2 ** 31)
 		this.entries = []
+		this.metadata = null
 	}
 
 	private makeAccess = (): Access => {
@@ -160,7 +167,7 @@ export class InMemoryCardSource<T extends { readonly id: string }>
 	}
 
 	newCursor = (): CardSourceCursor => {
-		return new InMemoryCardSourceCursor(
+		return new InMemoryCardSourceCursor<T, M>(
 			{
 				lastLoadedVersion: null,
 				currentId: null,
@@ -168,5 +175,12 @@ export class InMemoryCardSource<T extends { readonly id: string }>
 			this,
 			this.makeAccess()
 		)
+	}
+
+	getMetadata = async (): Promise<M | null> => {
+		return this.metadata
+	}
+	setMetadata = async (metadata: M): Promise<void> => {
+		this.metadata = metadata
 	}
 }

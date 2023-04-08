@@ -1,7 +1,12 @@
 import { MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
 import { throwExpression } from "../../util/stl"
-import { MutableCardSource, CardSource, CardSourceCursor } from "../source"
-import { IDBStorageDB } from "./db"
+import {
+	MutableCardSource,
+	CardSource,
+	CardSourceCursor,
+	MetadataCardSource,
+} from "../source"
+import { CardCollectionDBEntity, IDBStorageDB } from "./db"
 
 interface Access {
 	readonly collectionId: string
@@ -14,12 +19,12 @@ interface IDBCursorData {
 	currentId: string | null
 }
 
-class IndexedDBCardSourceCursor<T extends { readonly id: string }>
+class IndexedDBCardSourceCursor<T extends { readonly id: string }, M>
 	implements CardSourceCursor
 {
 	constructor(
 		public data: IDBCursorData,
-		public readonly source: IndexedDBCardSource<T>,
+		public readonly source: IndexedDBCardSource<T, M>,
 		private readonly access: Access
 	) {}
 	advance = async (n: number) => {
@@ -119,7 +124,7 @@ class IndexedDBCardSourceCursor<T extends { readonly id: string }>
 	}
 
 	clone = () => {
-		return new IndexedDBCardSourceCursor<T>(
+		return new IndexedDBCardSourceCursor<T, M>(
 			{ ...this.data },
 			this.source,
 			this.access
@@ -191,8 +196,14 @@ class IndexedDBCardSourceCursor<T extends { readonly id: string }>
 	}
 }
 
-export class IndexedDBCardSource<T extends { readonly id: string }>
-	implements CardSource<T>, MutableCardSource<T>
+const makeInitialCollection = (id: string): CardCollectionDBEntity => ({
+	id,
+	version: -(2 ** 31),
+	metadata: null,
+})
+
+export class IndexedDBCardSource<T extends { readonly id: string }, M = void>
+	implements CardSource<T>, MutableCardSource<T>, MetadataCardSource<T, M>
 {
 	constructor(
 		private readonly db: IDBStorageDB,
@@ -209,10 +220,7 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 					.equals(this.collectionId)
 					.first()
 				if (!collection) {
-					collection = {
-						id: this.collectionId,
-						version: -(2 ** 31),
-					}
+					collection = makeInitialCollection(this.collectionId)
 				}
 
 				const version = collection.version
@@ -249,7 +257,7 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 	}
 
 	newCursor = (): CardSourceCursor => {
-		return new IndexedDBCardSourceCursor(
+		return new IndexedDBCardSourceCursor<T, M>(
 			{
 				currentId: null,
 				lastLoadedVersion: null,
@@ -323,6 +331,40 @@ export class IndexedDBCardSource<T extends { readonly id: string }>
 						true
 					)
 					.delete()
+			}
+		)
+	}
+
+	getMetadata = async (): Promise<M | null> => {
+		return await this.db.transaction(
+			"r?",
+			[this.db.cardCollections],
+			async () => {
+				let collection = await this.db.cardCollections
+					.where("id")
+					.equals(this.collectionId)
+					.first()
+				collection =
+					collection ?? makeInitialCollection(this.collectionId)
+
+				return collection.metadata ?? null
+			}
+		)
+	}
+	setMetadata = async (metadata: M): Promise<void> => {
+		return await this.db.transaction(
+			"rw?",
+			[this.db.cardCollections],
+			async () => {
+				let collection = await this.db.cardCollections
+					.where("id")
+					.equals(this.collectionId)
+					.first()
+				collection =
+					collection ?? makeInitialCollection(this.collectionId)
+				collection.metadata = metadata
+
+				await this.db.cardCollections.put(collection)
 			}
 		)
 	}

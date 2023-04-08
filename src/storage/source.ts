@@ -46,6 +46,23 @@ export interface MutableCardSource<T> extends CardSource<T> {
 	/**
 	 * Disposes all resources associated with that source.
 	 * Any kind of cursor, which was associated with it should be used no more, as it's UB.
+	 * 
+	 * If this source has metadata associated with it, it also gets cleared.
 	 */
 	clear: () => Promise<void>
+}
+
+/**
+ * Card source capable of storing metadata about whole collection of cards.
+ */
+export interface MetadataCardSource<T, M> extends CardSource<T> {
+	/**
+	 * Returns last set metadata, or null if none is set.
+	 */
+	getMetadata: () => Promise<M | null>
+	
+	/**
+	 * Sets metadata of this source.
+	 */
+	setMetadata: (metadata: M) => Promise<void>
 }

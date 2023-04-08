@@ -2,11 +2,15 @@ import { generateUUID, throwExpression } from "../util/stl"
 import { CombinedCardSource } from "./combined"
 import { IDBStorageDB, IndexedDBCardSource } from "./idb"
 import { InMemoryCardSource } from "./memory"
-import { MutableCardSource, CardSource } from "./source"
+import { MutableCardSource, CardSource, MetadataCardSource } from "./source"
 
 type Card = {
 	id: string
 	i: number
+}
+
+type Metadata = {
+	id: string
 }
 
 const baseCards: Card[] = [...new Array(20).keys()].map((i) => ({
@@ -59,7 +63,7 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 
 	it("can iterate through all cards", async () => {
 		const cursor = source.newCursor()
-		const ids = []
+		const ids: string[] = []
 		for (;;) {
 			if (cursor.currentId !== null) {
 				ids.push(cursor.currentId)
@@ -80,7 +84,7 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 
 	it("can iterate through all cards with serialized cursor", async () => {
 		let cursor = source.newCursor()
-		const ids = []
+		const ids: string[] = []
 		for (;;) {
 			cursor = source.deserializeCursor(source.serializeCursor(cursor))
 			if (cursor.currentId !== null) {
@@ -102,7 +106,7 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 
 	it("can iterate through all cards with cloned cursor", async () => {
 		let cursor = source.newCursor()
-		const ids = []
+		const ids: string[] = []
 		for (;;) {
 			const clone = cursor.clone()
 			await clone.next()
@@ -156,8 +160,8 @@ const testCardSource = (sourceFactory: () => Promise<CardSource<Card>>) => {
 			let sumShiftSoFar = 0
 			const limit = baseCards.length
 
-			const expectedCards = []
-			const gotIds = []
+			const expectedCards: Card[] = []
+			const gotIds: string[] = []
 
 			let advancedByNonZero = false
 			for (const delta of set) {
@@ -215,7 +219,7 @@ const testMutableCardSource = (
 
 	it("can iterate through all cards with deleting cards", async () => {
 		let cursor = source.newCursor()
-		const ids = []
+		const ids: string[] = []
 		for (;;) {
 			const { currentId } = cursor
 			if (currentId !== null) {
@@ -257,7 +261,7 @@ const testMutableCardSource = (
 
 		await cursor.refresh()
 
-		const ids = []
+		const ids: string[] = []
 		for (;;) {
 			if (cursor.currentId !== null) {
 				ids.push(cursor.currentId)
@@ -270,8 +274,37 @@ const testMutableCardSource = (
 	})
 }
 
+const testMetadataCardSource = (
+	sourceFactory: () => Promise<
+		MetadataCardSource<Card, Metadata> & MutableCardSource<Card>
+	>
+) => {
+	let source: MetadataCardSource<Card, Metadata> & MutableCardSource<Card>
+	beforeEach(async () => {
+		source = await sourceFactory()
+	})
+
+	it("can read metadata, when none set", async () => {
+		expect(await source.getMetadata()).toEqual(null)
+	})
+
+	it("can set and read metadata", async () => {
+		const id = generateUUID()
+		await source.setMetadata({ id })
+		expect((await source.getMetadata())?.id).toEqual(id)
+	})
+
+	it("can clear metadata if clear is available", async () => {
+		const id = generateUUID()
+		await source.setMetadata({ id })
+		await source.clear()
+		expect(await source.getMetadata()).toEqual(null)
+	})
+}
+
 describe("In-memory source", () => {
 	testCardSource(async () => new InMemoryCardSource(baseCards))
+	testMetadataCardSource(async () => new InMemoryCardSource<Card, Metadata>([]))
 	testMutableCardSource(async () => new InMemoryCardSource<Card>([]))
 })
 
@@ -286,6 +319,14 @@ describe("IDB source", () => {
 			await src.append(c)
 		}
 
+		return src
+	})
+
+	testMetadataCardSource(async () => {
+		const src = new IndexedDBCardSource<Card, Metadata>(
+			new IDBStorageDB("asdf1234"),
+			generateUUID()
+		)
 		return src
 	})
 

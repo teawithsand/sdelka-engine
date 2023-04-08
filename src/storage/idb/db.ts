@@ -34,6 +34,7 @@ export type QueueEntryDBEntity = {
 export type CardCollectionDBEntity = {
 	id: string
 	version: number
+	metadata: any
 }
 
 export type CardCollectionEntryDBEntity = {
