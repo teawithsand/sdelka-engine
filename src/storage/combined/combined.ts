@@ -100,7 +100,6 @@ class CombinedCardSourceCursor<T> implements CardSourceCursor {
 export type CombinedCardSourceSource<T> = {
 	source: CardSource<T>
 	sourceId: string
-	offset?: number
 }
 
 export class CombinedCardSource<T> implements CardSource<T> {
@@ -110,8 +109,7 @@ export class CombinedCardSource<T> implements CardSource<T> {
 	 */
 	constructor(private readonly sources: CombinedCardSourceSource<T>[]) {
 		this.sources = [...sources]
-		// note: this sort has to be stable in order for this to work
-		this.sources.sort((a, b) => (a.offset ?? 0) - (b.offset ?? 0))
+		
 		const ids = new Set<string>()
 		for (const s of sources) {
 			if (ids.has(s.sourceId))
