@@ -1,5 +1,10 @@
 import { CardId } from "./storage"
 
+/**
+ * Cursor, which iterates over cards, yielding their ids.
+ * 
+ * Right now cursor is not allowed to yield same id twice, but it's subject to change in future.
+ */
 export interface CardSourceCursor {
 	readonly currentId: CardId | null
 	/**
@@ -40,6 +45,8 @@ export interface CardSource<T> {
  * CardSource, which may have cards deleted from and appended to.
  */
 export interface MutableCardSource<T> extends CardSource<T> {
+	// TODO(teawithsand): function for bringing card to the end(like it was deleted and then appended)
+
 	append: (data: T) => Promise<void>
 	delete: (id: CardId) => Promise<void>
 
