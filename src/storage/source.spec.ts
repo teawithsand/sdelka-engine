@@ -1,6 +1,6 @@
 import { generateUUID, throwExpression } from "../util/stl"
 import { CombinedCardSource } from "./combined"
-import { IDBStorageDB, IndexedDBCardSource } from "./idb"
+import { IndexedDBCardSource, IndexedDBCardSourceDB } from "./idb"
 import { InMemoryCardSource } from "./memory"
 import { MutableCardSource, CardSource, MetadataCardSource } from "./source"
 
@@ -311,7 +311,7 @@ describe("In-memory source", () => {
 describe("IDB source", () => {
 	testCardSource(async () => {
 		const src = new IndexedDBCardSource<Card>(
-			new IDBStorageDB("asdf1234"),
+			new IndexedDBCardSourceDB("asdf1234"),
 			generateUUID()
 		)
 
@@ -324,7 +324,7 @@ describe("IDB source", () => {
 
 	testMetadataCardSource(async () => {
 		const src = new IndexedDBCardSource<Card, Metadata>(
-			new IDBStorageDB("asdf1234"),
+			new IndexedDBCardSourceDB("asdf1234"),
 			generateUUID()
 		)
 		return src
@@ -332,7 +332,7 @@ describe("IDB source", () => {
 
 	testMutableCardSource(async () => {
 		const src = new IndexedDBCardSource<Card>(
-			new IDBStorageDB("asdf1234"),
+			new IndexedDBCardSourceDB("asdf1234"),
 			generateUUID()
 		)
 

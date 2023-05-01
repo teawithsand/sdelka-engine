@@ -1,6 +1,5 @@
+import { IndexedDBEngineStorage, IndexedDBEngineStorageDB } from "."
 import { generateUUID } from "../util/stl"
-import { IDBStorageDB } from "./idb/db"
-import { IDBEngineStorage } from "./idb/storage"
 import { InMemoryEngineStorage } from "./memory/storage"
 import { GroupedQueue, GroupedQueueRangeLike } from "./queue"
 import { EngineStorage } from "./storage"
@@ -237,8 +236,8 @@ describe("In-memory storage", () => {
 })
 
 describe("IDB storage", () => {
-	const db = new IDBStorageDB("db-0")
-	testStorage(() => new IDBEngineStorage(db, generateUUID()))
+	const db = new IndexedDBEngineStorageDB("db-0")
+	testStorage(() => new IndexedDBEngineStorage(db, generateUUID()))
 
 	// TODO(teawithsand): tests for conflicting session names
 })

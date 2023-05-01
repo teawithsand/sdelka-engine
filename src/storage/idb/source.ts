@@ -6,11 +6,11 @@ import {
 	CardSourceCursor,
 	MetadataCardSource,
 } from "../source"
-import { CardCollectionDBEntity, IDBStorageDB } from "./db"
+import { CardCollectionDBEntity, IndexedDBCardSourceDB } from "./sourceDB"
 
 interface Access {
 	readonly collectionId: string
-	readonly db: IDBStorageDB
+	readonly db: IndexedDBCardSourceDB
 	readonly initialize: () => Promise<void>
 }
 
@@ -206,7 +206,7 @@ export class IndexedDBCardSource<T extends { readonly id: string }, M = void>
 	implements CardSource<T>, MutableCardSource<T>, MetadataCardSource<T, M>
 {
 	constructor(
-		private readonly db: IDBStorageDB,
+		private readonly db: IndexedDBCardSourceDB,
 		public readonly collectionId: string
 	) {}
 

@@ -30,45 +30,10 @@ export type QueueEntryDBEntity = {
 
 	data: any
 }
-
-export type CardCollectionDBEntity = {
-	id: string
-	version: number
-	metadata: any
-}
-
-export type CardCollectionEntryDBEntity = {
-	id: string
-	collectionId: string
-	version: number
-
-	data: any
-}
-
-/**
- * Have I mentioned that I dislike IndexedDB?
- *
- * Let the queries in this class tell you why. Just imagine how each one would look in SQL...
- * The main PITA is that there is no something like IN, you can only query ranges AND you
- * may only walk through single tree/index at the time.
- *
- * This class represents DB that contains CD/SD of some type, but actually it's per-session,
- * so you can easily force cast this to some other DB type. Just make sure each session id
- * has the very same data type.
- *
- * This class is to-be-used by IDBEngineStorage. You probably do not want to use it on it's own.
- * It's also subject to more frequent changes compared to EngineStorage.
- */
-export class IDBStorageDB extends Dexie {
+export class IndexedDBEngineStorageDB extends Dexie {
 	public readonly sessions!: Table<SessionStorageEntryDBEntity, string>
 	public readonly cards!: Table<CardStorageEntryDBEntity, string>
 	public readonly queues!: Table<QueueEntryDBEntity, string>
-
-	public readonly cardCollections!: Table<CardCollectionDBEntity, string>
-	public readonly cardCollectionEntries!: Table<
-		CardCollectionEntryDBEntity,
-		string
-	>
 
 	constructor(name: string) {
 		super(name)
@@ -76,9 +41,6 @@ export class IDBStorageDB extends Dexie {
 			sessions: "session",
 			cards: "[session+id]",
 			queues: "[session+name+id], session, [session+name], [session+name+group], [session+name+priority], [session+name+group+priority]",
-
-			cardCollections: "id",
-			cardCollectionEntries: "[collectionId+id], [collectionId+version]",
 		})
 	}
 
