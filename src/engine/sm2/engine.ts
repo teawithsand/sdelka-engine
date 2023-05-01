@@ -21,8 +21,8 @@ import { SM2EngineStorage as SM2EngineCardStorage } from "./storage"
 import { SM2EngineCardDataTransition } from "./transition"
 import { TimestampMs, throwExpression } from "../../util/stl"
 
-export class SM2Engine<T>
-	implements Engine<T, SM2EngineAnswer, SM2EngineStats>
+export class SM2Engine<D extends { id: string }>
+	implements Engine<string, SM2EngineAnswer, SM2EngineStats>
 {
 	private isInitialized = false
 
@@ -31,7 +31,7 @@ export class SM2Engine<T>
 			SM2EngineCardData,
 			SM2EngineSessionData
 		>,
-		private readonly source: CardSource<T>,
+		private readonly source: CardSource<D>,
 		private readonly config: SM2EngineConfig,
 		private readonly clock: Clock
 	) {}
@@ -289,7 +289,7 @@ export class SM2Engine<T>
 		})
 	}
 
-	public getCurrentCard = async (): Promise<T | null> => {
+	public getCurrentCard = async (): Promise<string | null> => {
 		return await this.lowLevelStorage.transaction(async () => {
 			await this.initialize()
 			await this.onMaybeNewDay()
@@ -305,7 +305,7 @@ export class SM2Engine<T>
 					)
 				)
 
-			return data
+			return data?.id ?? null
 		})
 	}
 

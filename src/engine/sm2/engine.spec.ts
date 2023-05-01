@@ -73,7 +73,7 @@ describe("SM2Engine", () => {
 	it("yields new cards in-order", async () => {
 		for (let i = 0; i < config.maxNewCardsPerDay; i++) {
 			const card = await engine.getCurrentCard()
-			expect(card?.i).toStrictEqual(cards[i].i)
+			expect(card).toStrictEqual(cards[i].id)
 
 			await engine.answer(SM2EngineAnswer.EASY)
 		}
@@ -221,9 +221,7 @@ describe("SM2Engine", () => {
 			if (count === 0) {
 				expect(await engine.getCurrentCard()).toBeNull()
 			} else {
-				expect((await engine.getCurrentCard())?.id).toEqual(
-					firstCard.id
-				)
+				expect(await engine.getCurrentCard()).toEqual(firstCard)
 			}
 		}
 	})
@@ -237,7 +235,7 @@ describe("SM2Engine", () => {
 		await engine.undo()
 
 		expect(
-			(await engine.cardStorage.getEngineCardData(card.id))?.type
+			(await engine.cardStorage.getEngineCardData(card))?.type
 		).toEqual(SM2CardType.NEW)
 
 		const stats = await engine.getStats()
