@@ -39,7 +39,7 @@ export const idbComparator = (a: IDBComparable, b: IDBComparable): number => {
 	} else if (a instanceof Array && b instanceof Array) {
 		let sz = Math.min(a.length, b.length)
 		for (let i = 0; i < sz; i++) {
-			const res = idbComparator(a[i], b[1])
+			const res = idbComparator(a[i], b[i])
 			if (res !== 0) return res
 		}
 

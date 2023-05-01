@@ -229,6 +229,23 @@ const testStorage = (storageFactory: () => EngineStorage<Data, Data>) => {
 			i++
 		}
 	})
+
+	it("provides correct ordering for array keys", async () => {
+		const elements: PQData[] = [...new Array(10).keys()].map((v) => ({
+			id: `${v}-` + generateUUID(),
+			priority: [v, 1231231],
+			group: "G1",
+		}))
+		for (const e of elements) {
+			await queue.add(e)
+		}
+
+		expect(await queue.peekBack([])).toEqual(elements[0])
+		expect(await queue.peekBack(["G1"])).toEqual(elements[0])
+
+		expect(await queue.peekFront([])).toEqual(elements[elements.length - 1])
+		expect(await queue.peekFront(["G1"])).toEqual(elements[elements.length - 1])
+	})
 }
 
 describe("In-memory storage", () => {
