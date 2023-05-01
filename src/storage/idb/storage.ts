@@ -40,7 +40,10 @@ export class IDBEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 		})
 	}
 	deleteEngineCardData = async (id: string): Promise<void> => {
-		await this.db.cards.where("[session+id]").equals([this.session, id])
+		await this.db.cards
+			.where("[session+id]")
+			.equals([this.session, id])
+			.delete()
 	}
 	getQueue = <D>(
 		queueName: string,
