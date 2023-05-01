@@ -1,11 +1,15 @@
 import { Draft, produce } from "immer"
-import { CardSourceCursor } from "../../storage/source"
 import { EngineStorage } from "../../storage/storage"
 import { Clock } from "../clock"
-import { Engine } from "../engine"
+import {
+	CardDataBasedEngineManagement,
+	CardEngineManagement,
+	Engine,
+} from "../engine"
 
+import { Cursor } from "../../pubutil"
 import { TimestampMs } from "../../util/stl"
-import { NDTSC_BASE, SyncData } from "../../util/sync"
+import { NDTSC_BASE, SyncData, SyncRequest } from "../../util/sync"
 import {
 	SM2CardType,
 	SM2EngineAnswer,
@@ -23,7 +27,10 @@ import { SM2EngineStorage as SM2EngineCardStorage } from "./storage"
 import { SM2EngineCardDataTransition } from "./transition"
 
 export class SM2Engine
-	implements Engine<string, SM2EngineAnswer, SM2EngineStats>
+	implements
+		Engine<string, SM2EngineAnswer, SM2EngineStats>,
+		CardDataBasedEngineManagement<SM2EngineCardData>,
+		CardEngineManagement
 {
 	private isInitialized = false
 
@@ -43,14 +50,14 @@ export class SM2Engine
 			learnedReviewedCount: 0,
 			dayTimestamp: NaN,
 			additionalLearnedReviewCount: 0,
+			processedNewCardsCount: 0,
+			additionalNewCardsToProcess: 0,
 		},
-		leftToProcessNewCardsCount: 0,
 		cardDataNdtsc: NDTSC_BASE,
 		cardInsertNdtsc: NDTSC_BASE,
 	}
-	private currentCardData: Readonly<SM2EngineCardData | null> = null
-	private currentCursor: CardSourceCursor | null = null
 
+	private currentCardData: Readonly<SM2EngineCardData | null> = null
 	private readonly transition = new SM2EngineCardDataTransition(this.config)
 
 	private getNowTimestamp = async (): Promise<TimestampMs> => {
@@ -80,25 +87,43 @@ export class SM2Engine
 		return res
 	}
 
-	private appendNewCards = async (count: number) => {
-		if (count < 0 || !isFinite(count) || Math.round(count) !== count)
-			throw new Error(`Invalid count ${count} provided to appendNewCards`)
+	private getDesiredNewCardCountToProcess = () => {
+		return (
+			this.config.maxNewCardsPerDay +
+			this.sessionData.dailyData.additionalNewCardsToProcess
+		)
+	}
+
+	private setAdditionalNewCards = async (count: number) => {
+		if (!isFinite(count) || Math.round(count) !== count)
+			throw new Error(`Invalid count ${count} provided to setNewCards`)
+
+		const leftNewCardCount = await this.cardStorage.getNewCardCount()
 
 		await this.updateSessionData((draft) => {
-			draft.leftToProcessNewCardsCount =
-				draft.leftToProcessNewCardsCount + count
+			draft.dailyData.additionalNewCardsToProcess = Math.min(
+				Math.max(0, leftNewCardCount - this.config.maxNewCardsPerDay),
+				Math.max(-this.config.maxNewCardsPerDay, count)
+			)
 		})
 	}
 
-	private discardNewCards = async (count: number) => {
+	private addAdditionalNewCards = async (count: number) => {
 		if (count < 0 || !isFinite(count) || Math.round(count) !== count)
 			throw new Error(`Invalid count ${count} provided to appendNewCards`)
-		await this.updateSessionData((draft) => {
-			draft.leftToProcessNewCardsCount = Math.max(
-				0,
-				draft.leftToProcessNewCardsCount + count
-			)
-		})
+
+		await this.setAdditionalNewCards(
+			this.sessionData.dailyData.additionalNewCardsToProcess + count
+		)
+	}
+
+	private removeAdditionalNewCards = async (count: number) => {
+		if (count < 0 || !isFinite(count) || Math.round(count) !== count)
+			throw new Error(`Invalid count ${count} provided to appendNewCards`)
+
+		await this.setAdditionalNewCards(
+			this.sessionData.dailyData.additionalNewCardsToProcess - count
+		)
 	}
 
 	private onMaybeNewDay = async () => {
@@ -115,24 +140,22 @@ export class SM2Engine
 					learnedReviewedCount: 0,
 					additionalLearnedReviewCount: 0,
 					dayTimestamp: this.clock.getDay(now),
+					additionalNewCardsToProcess: 0,
+					processedNewCardsCount: 0,
 				}
 			})
-
-			const newCount = await this.cardStorage.getNewCardCount()
-
-			await this.appendNewCards(
-				Math.max(0, this.config.maxNewCardsPerDay - newCount)
-			)
 		}
 	}
 
-	private loadCurrentCard = async () => {
+	private loadCurrentCard = async (): Promise<void> => {
 		const now = await this.getNowTimestamp()
-		const newCardCount = await this.cardStorage.getNewCardCount()
 
 		const card = await this.cardStorage.getTopEngineCardData(
 			now,
-			this.sessionData.leftToProcessNewCardsCount <= 0
+			!(
+				this.sessionData.dailyData.processedNewCardsCount <
+				this.getDesiredNewCardCountToProcess()
+			)
 		)
 		if (!card) {
 			this.currentCardData = null
@@ -228,7 +251,11 @@ export class SM2Engine
 				),
 				newCount: Math.min(
 					storageStats.newCount,
-					this.sessionData.leftToProcessNewCardsCount
+					Math.max(
+						0,
+						this.getDesiredNewCardCountToProcess() -
+							this.sessionData.dailyData.processedNewCardsCount
+					)
 				),
 			}
 		})
@@ -271,16 +298,15 @@ export class SM2Engine
 				currentCardData
 			)
 
+			newCardData.syncData = await this.makeCardDataSyncData()
+
 			if (
 				currentCardData.type === SM2CardType.NEW &&
 				newCardData.type !== SM2CardType.NEW
 			) {
 				// we just got rid of one new card
 				await this.updateSessionData((draft) => {
-					draft.leftToProcessNewCardsCount = Math.max(
-						0,
-						draft.leftToProcessNewCardsCount - 1
-					)
+					draft.dailyData.processedNewCardsCount += 1
 				})
 			}
 
@@ -308,12 +334,18 @@ export class SM2Engine
 			// since it must have lower total-index, as it was already processed from new to some other state,
 			// so any card that comes after it must have been processed already.
 
+			// this is sufficient, since we can't reverse from now to sth else
+			// as transition from X to new is impossible
 			if (res.type === SM2CardType.NEW) {
 				await this.updateSessionData((draft) => {
 					// this has to be done, so we make sure that we just didn't remove
 					// some new card, which was scheduled for today
-					draft.leftToProcessNewCardsCount =
-						draft.leftToProcessNewCardsCount + 1
+
+					// max here for safety in case we've just done inter-day card reversal
+					draft.dailyData.processedNewCardsCount = Math.max(
+						0,
+						draft.dailyData.processedNewCardsCount - 1
+					)
 				})
 			}
 
@@ -332,10 +364,91 @@ export class SM2Engine
 			await this.onMaybeNewDay()
 
 			if (n > 0) {
-				await this.appendNewCards(Math.abs(n))
+				await this.addAdditionalNewCards(Math.abs(n))
 			} else {
-				await this.discardNewCards(Math.abs(n))
+				await this.removeAdditionalNewCards(Math.abs(n))
 			}
+		})
+	}
+
+	public getEngineCardData = async (
+		id: string
+	): Promise<SM2EngineCardData | null> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+
+			return await this.cardStorage.getEngineCardData(id)
+		})
+	}
+
+	public setEngineCardData = async (
+		id: string,
+		data: SM2EngineCardData
+	): Promise<void> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+
+			this.currentCardData = null
+
+			if (data.id !== id)
+				throw new Error(`Data id does not match id provided`)
+
+			return await this.cardStorage.setEngineCardData(data)
+		})
+	}
+
+	public hasEngineCardData = async (id: string): Promise<boolean> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+
+			return (await this.cardStorage.getEngineCardData(id)) !== null
+		})
+	}
+
+	public getEngineCardDataForSyncRequest = (
+		req: SyncRequest
+	): Cursor<SM2EngineCardData> => {
+		throw new Error(`NIY`)
+	}
+
+	public hasCard = async (id: string): Promise<boolean> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+
+			return (await this.cardStorage.getEngineCardData(id)) !== null
+		})
+	}
+
+	public addCard = async (
+		id: string,
+		priority?: number | undefined
+	): Promise<void> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			await this.initialize()
+
+			const syncData = await this.makeCardDataSyncData()
+			this.currentCardData = null
+
+			await this.cardStorage.appendNewCard({
+				type: SM2CardType.NEW,
+				id,
+				syncData,
+				userPriorityOffset: priority ?? 0,
+				ndtscOffset: this.sessionData.cardInsertNdtsc,
+			})
+
+			await this.updateSessionData((draft) => {
+				draft.cardInsertNdtsc += 1
+			})
+		})
+	}
+
+	public deleteCard = async (id: string): Promise<void> => {
+		return await this.lowLevelStorage.transaction(async () => {
+			this.currentCardData = null
+
+			await this.initialize()
+			await this.cardStorage.deleteEngineCardData(id)
 		})
 	}
 }

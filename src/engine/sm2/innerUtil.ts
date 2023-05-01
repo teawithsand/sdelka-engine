@@ -1,18 +1,4 @@
-import { CardId } from "../../storage"
-import { NDTSC } from "../../util/sync"
-import { SM2CardType, SM2EngineCardData } from "./defines"
-
-/**
- * Creates card data for new card.
- */
-export const makeNewSM2EngineCardData = (
-	id: CardId,
-	offset: NDTSC
-): SM2EngineCardData => ({
-	type: SM2CardType.NEW,
-	id,
-	engineQueueOffset: offset,
-})
+import { SM2CardType } from "./defines"
 
 export enum SM2EngineQueueId {
 	NEW = "new",

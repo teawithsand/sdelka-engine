@@ -1,4 +1,5 @@
 import { IndexedDBEngineStorage, IndexedDBEngineStorageDB } from "."
+import { IDBComparable } from "../pubutil"
 import { generateUUID } from "../util/stl"
 import { InMemoryEngineStorage } from "./memory/storage"
 import { GroupedQueue, GroupedQueueRangeLike } from "./queue"
@@ -11,7 +12,7 @@ type Data = {
 
 type PQData = {
 	id: string
-	priority: number
+	priority: IDBComparable
 	group?: string
 }
 

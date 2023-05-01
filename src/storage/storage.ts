@@ -1,3 +1,5 @@
+import { Cursor } from "../pubutil"
+import { SyncRequest } from "../util/sync"
 import { GroupedQueueElementPropsExtractor, GroupedQueue } from "./queue"
 
 export type CardId = string
@@ -26,4 +28,7 @@ export interface EngineStorage<CD, SD> {
 		queueId: string,
 		extractor: GroupedQueueElementPropsExtractor<D>
 	) => GroupedQueue<D>
+
+	// TODO(teawithsand): implement this
+	// getEntiresForSyncRequest: (req: SyncRequest) => Cursor<CardId>
 }

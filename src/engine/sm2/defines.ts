@@ -2,7 +2,7 @@ import { CardId } from "../../storage/storage"
 import { TimeMs } from "../../pubutil/time"
 import { DayTimestamp } from "../clock"
 import { TimestampMs } from "../../util/stl"
-import { NDTSC } from "../../util/sync"
+import { NDTSC, SyncData } from "../../util/sync"
 
 export enum SM2EngineAnswer {
 	EASY = 1,
@@ -42,6 +42,18 @@ export type SM2EngineDailySessionData = {
 	 * How many cards(besides reviewed in-schedule) should be processed today.
 	 */
 	additionalLearnedReviewCount: number
+
+	/**
+	 * How many new cards have been processed today.
+	 */
+	processedNewCardsCount: number
+
+	/**
+	 * How many cards user requested to be available above/below the desired new cards per day value.
+	 * 
+	 * By default 0; can be less than zero.
+	 */
+	additionalNewCardsToProcess: number
 }
 
 export type SM2EngineSessionData = {
@@ -54,13 +66,6 @@ export type SM2EngineSessionData = {
 	 * Session data, which gets reset every day.
 	 */
 	dailyData: SM2EngineDailySessionData
-
-	/**
-	 * How many cards are:
-	 * 1. On new queue
-	 * 2. Are left to-be-processed.
-	 */
-	leftToProcessNewCardsCount: number
 
 	/**
 	 * NDTSC updated each time card data gets updated.
@@ -118,10 +123,16 @@ export type SM2EngineCardData = {
 	 * Id of card that this data belongs to.
 	 */
 	id: CardId
+
+	/**
+	 * SyncData for each card, so we know when it was updated, so we can synchronize different learning sessions.
+	 */
+	syncData: SyncData
 } & (
 	| {
 			type: SM2CardType.NEW
-			engineQueueOffset: number
+			ndtscOffset: number
+			userPriorityOffset: number
 	  }
 	| ({
 			desiredPresentationTimestamp: TimestampMs

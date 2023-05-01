@@ -2,6 +2,11 @@ import { TimestampMs, getNowTimestamp } from "./stl"
 
 export type NDTSC = number
 
+export const DUMMY_SYNC_DATA: SyncData = {
+	ndtsc: 0,
+	timestamp: 0 as TimestampMs,
+}
+
 export type SyncData = {
 	timestamp: TimestampMs
 	ndtsc: NDTSC

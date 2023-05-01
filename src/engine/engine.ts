@@ -8,19 +8,19 @@ import { SyncRequest } from "../util/sync"
  * of this interface.
  */
 export interface CardDataBasedEngineManagement<T> {
-	getCardData: (id: string) => Promise<T | null>
-	setCardData: (id: string, data: T) => Promise<void>
-    hasCardData: (id: string) => Promise<boolean>
+	getEngineCardData: (id: string) => Promise<T | null>
+	setEngineCardData: (id: string, data: T) => Promise<void>
+    hasEngineCardData: (id: string) => Promise<boolean>
 
-	getEntriesForSyncRequest: (req: SyncRequest) => Cursor<T>
+	getEngineCardDataForSyncRequest: (req: SyncRequest) => Cursor<T>
 }
 
 /**
  * Engine, which has cards manually deleted/added to it.
  */
-export interface EngineCardManagement {
+export interface CardEngineManagement {
     hasCard: (id: string) => Promise<boolean>
-	addCard: (id: string) => Promise<void>
+	addCard: (id: string, priority?: number) => Promise<void>
 	deleteCard: (id: string) => Promise<void>
 }
 

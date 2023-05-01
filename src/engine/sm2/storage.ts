@@ -7,7 +7,7 @@ import {
 	SM2EngineCardData,
 	SM2EngineStorageStats,
 } from "./defines"
-import { makeNewSM2EngineCardData, SM2EngineQueueId } from "./innerUtil"
+import { SM2EngineQueueId } from "./innerUtil"
 
 export class SM2EngineStorage {
 	constructor(
@@ -30,11 +30,14 @@ export class SM2EngineStorage {
 	}
 
 	deleteEngineCardData = async (id: CardId) => {
+		// TODO(teawithsand): move that card to deleted queue + integrate it with undo
 		await this.queue.deleteId(id)
 	}
 
-	appendNewCard = async (id: CardId, offset: number) => {
-		await this.setEngineCardData(makeNewSM2EngineCardData(id, offset))
+	appendNewCard = async (
+		data: SM2EngineCardData & { type: SM2CardType.NEW }
+	) => {
+		await this.setEngineCardData(data)
 	}
 
 	getNewCardCount = async () => {

@@ -9,7 +9,7 @@ export const SM2EngineQueueElementExtractor: GroupedQueueElementPropsExtractor<
 		return {
 			id: data.id,
 			group: cardTypeToQueueId(data.type),
-			priority: data.engineQueueOffset,
+			priority: [data.userPriorityOffset, data.ndtscOffset],
 		}
 	} else {
 		return {

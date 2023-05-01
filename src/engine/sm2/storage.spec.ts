@@ -1,5 +1,6 @@
 import { InMemoryEngineStorage } from "../../storage/memory/storage"
 import { TimestampMs, generateUUID } from "../../util/stl"
+import { DUMMY_SYNC_DATA } from "../../util/sync"
 import { DebugClock } from "../clock"
 import { SM2CardType } from "./defines"
 import { SM2EngineQueueElementExtractor } from "./queues"
@@ -8,6 +9,7 @@ import { SM2EngineStorage } from "./storage"
 describe("SM2EngineStorage", () => {
 	let storage: SM2EngineStorage
 	let clock: DebugClock
+	
 	beforeEach(() => {
 		const inMem = new InMemoryEngineStorage()
 		const queue = inMem.getQueue("main", SM2EngineQueueElementExtractor)
@@ -49,6 +51,7 @@ describe("SM2EngineStorage", () => {
 			expect(clock.getDay(ts)).toEqual(1)
 			await storage.setEngineCardData({
 				id: id,
+				syncData: DUMMY_SYNC_DATA,
 				type: SM2CardType.LEARNED,
 				desiredPresentationTimestamp: ts,
 				easeFactor: 1.2,
@@ -60,6 +63,7 @@ describe("SM2EngineStorage", () => {
 		for (let _id of ids) {
 			await storage.setEngineCardData({
 				id: generateUUID(),
+				syncData: DUMMY_SYNC_DATA,
 				type: SM2CardType.LEARNED,
 				desiredPresentationTimestamp: (1000 *
 					60 *
@@ -85,6 +89,7 @@ describe("SM2EngineStorage", () => {
 
 			await storage.setEngineCardData({
 				id: id,
+				syncData: DUMMY_SYNC_DATA,
 				type: SM2CardType.LEARNED,
 				desiredPresentationTimestamp: (1000 *
 					60 *

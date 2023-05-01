@@ -68,6 +68,7 @@ export class SM2EngineCardDataTransition {
 				const interval = this.boundInterval(this.getLearningStep(0))
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNING,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -79,6 +80,7 @@ export class SM2EngineCardDataTransition {
 				)
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNED,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -94,6 +96,7 @@ export class SM2EngineCardDataTransition {
 				const interval = this.boundInterval(this.config.lapInterval)
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.RELEARNING,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -110,6 +113,7 @@ export class SM2EngineCardDataTransition {
 				const interval = this.boundInterval(data.interval * ef)
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNED,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -122,6 +126,7 @@ export class SM2EngineCardDataTransition {
 				const interval = this.boundInterval(data.interval * ef)
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNED,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -136,6 +141,7 @@ export class SM2EngineCardDataTransition {
 				const interval = this.boundInterval(data.interval * ef)
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNED,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -150,6 +156,7 @@ export class SM2EngineCardDataTransition {
 
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNING,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -162,6 +169,7 @@ export class SM2EngineCardDataTransition {
 
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNING,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -175,6 +183,7 @@ export class SM2EngineCardDataTransition {
 					const ef = this.boundEaseFactor(this.config.initEaseFactor)
 					return {
 						id: data.id,
+						syncData: data.syncData,
 						type: SM2CardType.LEARNED,
 						desiredPresentationTimestamp: (now +
 							interval) as TimestampMs,
@@ -189,6 +198,7 @@ export class SM2EngineCardDataTransition {
 
 					return {
 						id: data.id,
+						syncData: data.syncData,
 						type: SM2CardType.LEARNING,
 						desiredPresentationTimestamp: (now +
 							interval) as TimestampMs,
@@ -202,6 +212,7 @@ export class SM2EngineCardDataTransition {
 
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNED,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -217,6 +228,7 @@ export class SM2EngineCardDataTransition {
 				const interval = this.boundInterval(this.getRelearningStep(0))
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.RELEARNING,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
@@ -231,6 +243,7 @@ export class SM2EngineCardDataTransition {
 				return {
 					id: data.id,
 					type: SM2CardType.RELEARNING,
+					syncData: data.syncData,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
 					easeFactor: this.boundEaseFactor(data.easeFactor),
@@ -244,6 +257,7 @@ export class SM2EngineCardDataTransition {
 					)
 					return {
 						id: data.id,
+						syncData: data.syncData,
 						type: SM2CardType.LEARNED,
 						desiredPresentationTimestamp: (now +
 							interval) as TimestampMs,
@@ -258,6 +272,7 @@ export class SM2EngineCardDataTransition {
 
 					return {
 						id: data.id,
+						syncData: data.syncData,
 						type: SM2CardType.RELEARNING,
 						desiredPresentationTimestamp: (now +
 							interval) as TimestampMs,
@@ -275,6 +290,7 @@ export class SM2EngineCardDataTransition {
 				)
 				return {
 					id: data.id,
+					syncData: data.syncData,
 					type: SM2CardType.LEARNED,
 					desiredPresentationTimestamp: (now +
 						interval) as TimestampMs,
