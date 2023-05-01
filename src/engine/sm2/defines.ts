@@ -2,6 +2,7 @@ import { CardId } from "../../storage/storage"
 import { TimeMs } from "../../pubutil/time"
 import { DayTimestamp } from "../clock"
 import { TimestampMs } from "../../util/stl"
+import { NDTSC } from "../../util/sync"
 
 export enum SM2EngineAnswer {
 	EASY = 1,
@@ -50,25 +51,28 @@ export type SM2EngineSessionData = {
 	lastTimestampFetched: TimestampMs
 
 	/**
-	 * Serialized cursor value used to process source this engine is given.
-	 */
-	serializedCursor: any | null
-
-	/**
-	 * How many cards were polled from source so far.
-	 */
-	polledCardCount: number
-
-	/**
 	 * Session data, which gets reset every day.
 	 */
 	dailyData: SM2EngineDailySessionData
 
 	/**
-	 * How many new cards, which are placed on queue, are considered discarded
-	 * and are not used until new cards are added.
+	 * How many cards are:
+	 * 1. On new queue
+	 * 2. Are left to-be-processed.
 	 */
-	hiddenNewCardsCount: number
+	leftToProcessNewCardsCount: number
+
+	/**
+	 * NDTSC updated each time card data gets updated.
+	 * Used for synchronization.
+	 */
+	cardDataNdtsc: NDTSC
+
+	/**
+	 * NDTSC updated each time card is added to engine.
+	 * Used to maintain order between new cards, which have the same priority.
+	 */
+	cardInsertNdtsc: NDTSC
 }
 
 export type SM2EngineConfig = {

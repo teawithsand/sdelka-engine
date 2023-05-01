@@ -1,9 +1,11 @@
 import { Draft, produce } from "immer"
-import { CardSource, CardSourceCursor } from "../../storage/source"
+import { CardSourceCursor } from "../../storage/source"
 import { EngineStorage } from "../../storage/storage"
 import { Clock } from "../clock"
 import { Engine } from "../engine"
 
+import { TimestampMs } from "../../util/stl"
+import { NDTSC_BASE, SyncData } from "../../util/sync"
 import {
 	SM2CardType,
 	SM2EngineAnswer,
@@ -19,9 +21,8 @@ import {
 import { SM2EngineQueueElementExtractor as SM2EngineCardQueueElementExtractor } from "./queues"
 import { SM2EngineStorage as SM2EngineCardStorage } from "./storage"
 import { SM2EngineCardDataTransition } from "./transition"
-import { TimestampMs, throwExpression } from "../../util/stl"
 
-export class SM2Engine<D extends { id: string }>
+export class SM2Engine
 	implements Engine<string, SM2EngineAnswer, SM2EngineStats>
 {
 	private isInitialized = false
@@ -31,14 +32,11 @@ export class SM2Engine<D extends { id: string }>
 			SM2EngineCardData,
 			SM2EngineSessionData
 		>,
-		private readonly source: CardSource<D>,
 		private readonly config: SM2EngineConfig,
 		private readonly clock: Clock
 	) {}
 
 	private sessionData: Readonly<SM2EngineSessionData> = {
-		serializedCursor: null,
-		polledCardCount: 0,
 		lastTimestampFetched: 0 as TimestampMs,
 		dailyData: {
 			maxLearnedReviewCardCount: this.config.maxLearnedReviewsPerDay,
@@ -46,73 +44,59 @@ export class SM2Engine<D extends { id: string }>
 			dayTimestamp: NaN,
 			additionalLearnedReviewCount: 0,
 		},
-		hiddenNewCardsCount: 0,
+		leftToProcessNewCardsCount: 0,
+		cardDataNdtsc: NDTSC_BASE,
+		cardInsertNdtsc: NDTSC_BASE,
 	}
 	private currentCardData: Readonly<SM2EngineCardData | null> = null
 	private currentCursor: CardSourceCursor | null = null
 
 	private readonly transition = new SM2EngineCardDataTransition(this.config)
 
-	private appendNewCards = async (count: number) => {
-		this.currentCardData = null
-		let lastCardId = this.sessionData.serializedCursor
-
-		if (this.sessionData.hiddenNewCardsCount > 0) {
-			const newHiddenCardsCount = Math.max(
-				0,
-				this.sessionData.hiddenNewCardsCount - count
-			)
-			const newCount = count - this.sessionData.hiddenNewCardsCount
-
-			await this.updateSessionData((draft) => {
-				draft.hiddenNewCardsCount = newHiddenCardsCount
-			})
-
-			if (newCount <= 0) return this.sessionData.hiddenNewCardsCount
-			count = newCount
-		}
-
-		const cursor = await this.getOrLoadCursor()
-
-		let i = 0
-		for (;;) {
-			if(i >= count) break
-
-			const id = cursor.currentId
-			if (id !== null) {
-				i++
-				if (id === null) break
-				lastCardId = id
-				await this.cardStorage.appendNewCard(
-					id,
-					// subtract 2**31 here in order to stay SMI for as long as possible
-					// both in JS engine and in idb encoding(though I am not sure about 2nd one)
-					this.sessionData.polledCardCount + i - 2 ** 31
-				)
-			}
-
-			const goneToNext = await cursor.next()
-			if (!goneToNext) {
-				break
-			}
+	private getNowTimestamp = async (): Promise<TimestampMs> => {
+		const ts = this.clock.getNow()
+		if (ts < this.sessionData.lastTimestampFetched) {
+			throw new Error("Time went backwards; can't operate")
 		}
 
 		await this.updateSessionData((draft) => {
-			draft.serializedCursor = lastCardId
-			draft.polledCardCount += i
+			draft.lastTimestampFetched = ts
 		})
 
-		return i
+		return ts
+	}
+
+	private makeCardDataSyncData = async (
+		now?: TimestampMs
+	): Promise<SyncData> => {
+		const res: SyncData = {
+			ndtsc: this.sessionData.cardDataNdtsc,
+			timestamp: now ?? (await this.getNowTimestamp()),
+		}
+		await this.updateSessionData((draft) => {
+			draft.cardDataNdtsc += 1
+		})
+
+		return res
+	}
+
+	private appendNewCards = async (count: number) => {
+		if (count < 0 || !isFinite(count) || Math.round(count) !== count)
+			throw new Error(`Invalid count ${count} provided to appendNewCards`)
+
+		await this.updateSessionData((draft) => {
+			draft.leftToProcessNewCardsCount =
+				draft.leftToProcessNewCardsCount + count
+		})
 	}
 
 	private discardNewCards = async (count: number) => {
-		this.currentCardData = null
-		const newCardCount = await this.cardStorage.getNewCardCount()
-
+		if (count < 0 || !isFinite(count) || Math.round(count) !== count)
+			throw new Error(`Invalid count ${count} provided to appendNewCards`)
 		await this.updateSessionData((draft) => {
-			draft.hiddenNewCardsCount = Math.min(
-				newCardCount,
-				count + draft.hiddenNewCardsCount
+			draft.leftToProcessNewCardsCount = Math.max(
+				0,
+				draft.leftToProcessNewCardsCount + count
 			)
 		})
 	}
@@ -148,7 +132,7 @@ export class SM2Engine<D extends { id: string }>
 
 		const card = await this.cardStorage.getTopEngineCardData(
 			now,
-			newCardCount <= this.sessionData.hiddenNewCardsCount
+			this.sessionData.leftToProcessNewCardsCount <= 0
 		)
 		if (!card) {
 			this.currentCardData = null
@@ -203,19 +187,6 @@ export class SM2Engine<D extends { id: string }>
 		this.clock
 	)
 
-	private getNowTimestamp = async (): Promise<TimestampMs> => {
-		const ts = this.clock.getNow()
-		if (ts < this.sessionData.lastTimestampFetched) {
-			throw new Error("Time went backwards; can't operate")
-		}
-
-		await this.updateSessionData((draft) => {
-			draft.lastTimestampFetched = ts
-		})
-
-		return ts
-	}
-
 	private updateSessionData = async (
 		callback: (draft: Draft<SM2EngineSessionData>) => void
 	) => {
@@ -224,28 +195,11 @@ export class SM2Engine<D extends { id: string }>
 		await this.lowLevelStorage.setSessionData(this.sessionData)
 	}
 
-	private getOrLoadCursor = async () => {
-		if (!this.currentCursor) {
-			if (this.sessionData.serializedCursor) {
-				this.currentCursor = this.source.deserializeCursor(
-					this.sessionData.serializedCursor
-				)
-				await this.currentCursor.refresh()
-			} else {
-				this.currentCursor = this.source.newCursor()
-			}
-		}
-
-		return this.currentCursor
-	}
-
 	private initialize = async () => {
 		if (this.isInitialized) return
 
 		this.sessionData =
 			(await this.lowLevelStorage.getSessionData()) ?? this.sessionData
-
-		await this.getOrLoadCursor()
 
 		this.isInitialized = true
 	}
@@ -272,9 +226,9 @@ export class SM2Engine<D extends { id: string }>
 					this.sessionData.dailyData.maxLearnedReviewCardCount,
 					storageStats.todayLearnedCount
 				),
-				newCount: Math.max(
-					0,
-					storageStats.newCount - this.sessionData.hiddenNewCardsCount
+				newCount: Math.min(
+					storageStats.newCount,
+					this.sessionData.leftToProcessNewCardsCount
 				),
 			}
 		})
@@ -296,16 +250,7 @@ export class SM2Engine<D extends { id: string }>
 
 			const currentCardData = await this.getOrLoadCurrentCardData()
 			if (!currentCardData) return null
-
-			const data =
-				(await this.source.getCard(currentCardData.id)) ??
-				throwExpression(
-					new Error(
-						`Card with id ${currentCardData.id} was not found`
-					)
-				)
-
-			return data?.id ?? null
+			return currentCardData.id
 		})
 	}
 
@@ -317,13 +262,27 @@ export class SM2Engine<D extends { id: string }>
 			const now = await this.getNowTimestamp()
 
 			const currentCardData = await this.getOrLoadCurrentCardData()
-			if (!currentCardData) throw new Error(`No current card data`)
+			if (!currentCardData)
+				throw new Error(`No current card data; Can't answer`)
 
 			const newCardData = this.transition.transitionCardData(
 				now,
 				answer,
 				currentCardData
 			)
+
+			if (
+				currentCardData.type === SM2CardType.NEW &&
+				newCardData.type !== SM2CardType.NEW
+			) {
+				// we just got rid of one new card
+				await this.updateSessionData((draft) => {
+					draft.leftToProcessNewCardsCount = Math.max(
+						0,
+						draft.leftToProcessNewCardsCount - 1
+					)
+				})
+			}
 
 			await this.history.push(currentCardData)
 			await this.cardStorage.setEngineCardData(newCardData)
@@ -339,6 +298,7 @@ export class SM2Engine<D extends { id: string }>
 			// it may introduce inconsistencies, when card is to be backed from
 			// LEARNING/LEARNED to new state.
 
+			// invalidate cached currentCardData
 			this.currentCardData = null
 
 			const res = await this.history.pop()
@@ -347,6 +307,17 @@ export class SM2Engine<D extends { id: string }>
 			// Right now this undone card should be always at the first place in new queue
 			// since it must have lower total-index, as it was already processed from new to some other state,
 			// so any card that comes after it must have been processed already.
+
+			if (res.type === SM2CardType.NEW) {
+				await this.updateSessionData((draft) => {
+					// this has to be done, so we make sure that we just didn't remove
+					// some new card, which was scheduled for today
+					draft.leftToProcessNewCardsCount =
+						draft.leftToProcessNewCardsCount + 1
+				})
+			}
+
+			// TODO(teawithsand): update popped value's sync data here
 			await this.cardStorage.setEngineCardData(res)
 		})
 	}

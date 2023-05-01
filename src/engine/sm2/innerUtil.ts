@@ -1,4 +1,5 @@
 import { CardId } from "../../storage"
+import { NDTSC } from "../../util/sync"
 import { SM2CardType, SM2EngineCardData } from "./defines"
 
 /**
@@ -6,7 +7,7 @@ import { SM2CardType, SM2EngineCardData } from "./defines"
  */
 export const makeNewSM2EngineCardData = (
 	id: CardId,
-	offset: number
+	offset: NDTSC
 ): SM2EngineCardData => ({
 	type: SM2CardType.NEW,
 	id,

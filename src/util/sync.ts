@@ -1,14 +1,16 @@
 import { TimestampMs, getNowTimestamp } from "./stl"
 
+export type NDTSC = number
+
 export type SyncData = {
 	timestamp: TimestampMs
-	ndtsc: number
+	ndtsc: NDTSC
 }
 
-export const NDTSC_BASE = -(2 ** 31)
+export const NDTSC_BASE: NDTSC = -(2 ** 31)
 
 export const makeSyncData = (
-	ndtsc: number | null,
+	ndtsc: NDTSC | null,
 	timestamp = getNowTimestamp()
 ): SyncData => ({
 	ndtsc: ndtsc ?? NDTSC_BASE,
