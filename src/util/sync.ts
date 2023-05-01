@@ -14,3 +14,10 @@ export const makeSyncData = (
 	ndtsc: ndtsc ?? NDTSC_BASE,
 	timestamp,
 })
+
+export type SyncRequest = {
+	ndtscLowerThanOrEq?: number
+	ndtscGreaterThanOrEq?: number
+	timestampLowerThanOrEq?: number
+	timestampGreaterThanOrEq?: number
+}
