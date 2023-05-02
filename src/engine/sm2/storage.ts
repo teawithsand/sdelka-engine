@@ -1,7 +1,7 @@
 import { GroupedQueue } from "../../storage/queue"
 import { CardId } from "../../storage/storage"
 import { TimestampMs } from "../../util/stl"
-import { Clock } from "../clock"
+import { Clock, DayTimestamp } from "../clock"
 import {
 	SM2CardType,
 	SM2EngineCardData,
@@ -45,7 +45,7 @@ export class SM2EngineStorage {
 	}
 
 	getStorageStats = async (
-		now: TimestampMs
+		toDay: DayTimestamp
 	): Promise<SM2EngineStorageStats> => {
 		return {
 			newCount: await this.queue.length([SM2EngineQueueId.NEW]),
@@ -53,12 +53,10 @@ export class SM2EngineStorage {
 				SM2EngineQueueId.RELEARNING,
 			]),
 			learningCount: await this.queue.length([SM2EngineQueueId.LEARNING]),
-			todayLearnedCount: await this.queue.length(
+			learnedCount: await this.queue.length(
 				[SM2EngineQueueId.LEARNED],
 				{
-					toExcl: this.clock.getStartDayTimestamp(
-						this.clock.getDay(now) + 1
-					),
+					toExcl: toDay,
 				}
 			),
 		}

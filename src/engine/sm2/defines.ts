@@ -15,7 +15,7 @@ export type SM2EngineStorageStats = {
 	newCount: number
 	learningCount: number
 	relearningCount: number
-	todayLearnedCount: number
+	learnedCount: number
 }
 
 export type SM2EngineStats = {
@@ -25,35 +25,23 @@ export type SM2EngineStats = {
 	repetitionCount: number
 }
 
-export type SM2EngineDailySessionData = {
+export type SM2EngineDailyDailyData = {
+	dailyConfig: SM2EngineDailyConfig
+
+	/**
+	 * DayTimestamp this data was generated at. Stored in order to check if it's up-to-date. 
+	 */
 	dayTimestamp: DayTimestamp
-	
+
 	/**
 	 * How many cards were polled from LEARNED queue today.
 	 */
-	learnedReviewedCount: number
-
-	/**
-	 * Daily limit of reviewed cards. Can be adjusted accordingly.
-	 */
-	maxLearnedReviewCardCount: number
-
-	/**
-	 * How many cards(besides reviewed in-schedule) should be processed today.
-	 */
-	additionalLearnedReviewCount: number
+	processedLearnedCount: number
 
 	/**
 	 * How many new cards have been processed today.
 	 */
 	processedNewCardsCount: number
-
-	/**
-	 * How many cards user requested to be available above/below the desired new cards per day value.
-	 * 
-	 * By default 0; can be less than zero.
-	 */
-	additionalNewCardsToProcess: number
 }
 
 export type SM2EngineSessionData = {
@@ -65,7 +53,7 @@ export type SM2EngineSessionData = {
 	/**
 	 * Session data, which gets reset every day.
 	 */
-	dailyData: SM2EngineDailySessionData
+	dailyData: SM2EngineDailyDailyData
 
 	/**
 	 * NDTSC updated each time card data gets updated.
@@ -80,7 +68,43 @@ export type SM2EngineSessionData = {
 	cardInsertNdtsc: NDTSC
 }
 
+export type SM2EngineDailyConfig = {
+	learnedCountOverride: {
+		/**
+		 * How many learned cards may be processed that day.
+		 *
+		 * null should be used instead of infinity.
+		 * Beware that using null causes infinite repetition cycle to run when used with allowNotToday.
+		 */
+		limit: number | null
+	
+		/**
+		 * When true, limit really equals to
+		 * 1. If one of them is null, other one is used.
+		 * 2. If both are null, then null.
+		 * 3. `limit + config.maxLearnedReviewsPerDay`.
+		 */
+		limitIsRelative: boolean
+	}
+	
+	/**
+	 * How many days into future is considered today?
+	 *
+	 * By default zero.
+	 */
+	learnedCardDaysFutureAllowed: number
+
+	/**
+	 * How many cards user requested to be available above/below the desired new cards per day value.
+	 *
+	 * By default 0; can be less than zero.
+	 */
+	additionalNewCardsToProcess: number
+}
+
 export type SM2EngineConfig = {
+	initialDailyConfig: SM2EngineDailyConfig
+
 	skipLearningInterval: number
 	skipLearningEaseFactor: number
 
@@ -100,8 +124,8 @@ export type SM2EngineConfig = {
 	learningSteps: TimeMs[]
 	relearningSteps: TimeMs[]
 
-	maxNewCardsPerDay: number
-	maxLearnedReviewsPerDay: number
+	maxNewCardsPerDay: number // TODO(teawithsand): make it nullable
+	maxLearnedReviewsPerDay: number | null
 }
 
 export enum SM2CardType {

@@ -1,6 +1,5 @@
-import { IndexedDBEngineStorage, IndexedDBEngineStorageDB } from "../../storage"
+import { IndexedDBEngineStorageDB } from "../../storage"
 import { InMemoryEngineStorage } from "../../storage/memory"
-import { InMemoryCardSource } from "../../storage/memory/source"
 import { TimestampMs, generateUUID, throwExpression } from "../../util/stl"
 import { DebugClock } from "../clock"
 import { SM2CardType, SM2EngineAnswer, SM2EngineConfig } from "./defines"
@@ -12,6 +11,15 @@ type Card = {
 }
 
 const config: SM2EngineConfig = {
+	initialDailyConfig: {
+		additionalNewCardsToProcess: 0,
+		learnedCardDaysFutureAllowed: 0,
+		learnedCountOverride: {
+			limit: null,
+			limitIsRelative: true,
+		},
+	},
+
 	maxLearnedReviewsPerDay: 100,
 	maxNewCardsPerDay: 30,
 
@@ -40,7 +48,6 @@ describe("SM2Engine", () => {
 
 	let engine: SM2Engine
 	let clock: DebugClock
-	let db: IndexedDBEngineStorageDB
 	const cards = [...new Array(config.maxNewCardsPerDay + 100).keys()].map(
 		(i) => ({
 			id: `${i}-` + generateUUID(),
@@ -58,21 +65,12 @@ describe("SM2Engine", () => {
 	}
 
 	beforeEach(async () => {
-		db = new IndexedDBEngineStorageDB("asdf")
 		clock = new DebugClock(1000 as TimestampMs)
-		engine = new SM2Engine(
-			new InMemoryEngineStorage(),
-			config,
-			clock
-		)
+		engine = new SM2Engine(new InMemoryEngineStorage(), config, clock)
 
 		for (const c of cards) {
 			await engine.addCard(c.id)
 		}
-	})
-
-	afterEach(async () => {
-		await db.delete()
 	})
 
 	it("yields proper amount of new cards", async () => {
@@ -93,7 +91,7 @@ describe("SM2Engine", () => {
 
 	it("automatically loads new cards on new day until limit", async () => {
 		let offset = 0
-		for (let i = 0; i < 20; i++) {
+		for (let i = 0; i < config.maxNewCardsPerDay / 2; i++) {
 			await engine.answer(SM2EngineAnswer.EASY)
 			offset++
 		}
@@ -148,7 +146,6 @@ describe("SM2Engine", () => {
 		}
 	})
 
-
 	it("can undo card", async () => {
 		const card =
 			(await engine.getCurrentCard()) ??
@@ -166,10 +163,9 @@ describe("SM2Engine", () => {
 	})
 
 	it("can undo card when there are added/removed cards", async () => {
-		await engine.addOrRemoveNewCards(-100)
-		await engine.addOrRemoveNewCards(30)
-		await engine.addOrRemoveNewCards(100)
-		await engine.addOrRemoveNewCards(-100)
+		await engine.updateRuntimeConfig(draft => {
+			draft.additionalNewCardsToProcess += 30
+		})
 
 		const card =
 			(await engine.getCurrentCard()) ??
@@ -180,7 +176,9 @@ describe("SM2Engine", () => {
 			await engine.answer(SM2EngineAnswer.EASY)
 		}
 
-		await engine.addOrRemoveNewCards(-10)
+		await engine.updateRuntimeConfig(draft => {
+			draft.additionalNewCardsToProcess -= 10
+		})
 		const oldStats = await engine.getStats()
 
 		for (let i = 0; i < toProcessCount; i++) {

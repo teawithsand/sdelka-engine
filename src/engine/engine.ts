@@ -1,16 +1,17 @@
+import { Draft } from "immer"
 import { Cursor } from "../pubutil"
 import { SyncRequest } from "../util/sync"
 
 /**
  * Engine, which like SM2 engine uses key/value+features DB to run whole learning process.
- * 
+ *
  * Such databases are easy to synchronize between devices and synchronization is the main purpose of existence
  * of this interface.
  */
 export interface CardDataBasedEngineManagement<T> {
 	getEngineCardData: (id: string) => Promise<T | null>
 	setEngineCardData: (id: string, data: T) => Promise<void>
-    hasEngineCardData: (id: string) => Promise<boolean>
+	hasEngineCardData: (id: string) => Promise<boolean>
 
 	getEngineCardDataForSyncRequest: (req: SyncRequest) => Cursor<T>
 }
@@ -19,9 +20,15 @@ export interface CardDataBasedEngineManagement<T> {
  * Engine, which has cards manually deleted/added to it.
  */
 export interface CardEngineManagement {
-    hasCard: (id: string) => Promise<boolean>
+	hasCard: (id: string) => Promise<boolean>
 	addCard: (id: string, priority?: number) => Promise<void>
 	deleteCard: (id: string) => Promise<void>
+}
+
+export interface RuntimeConfigurableEngine<C> {
+	setRuntimeConfig: (config: C) => Promise<void>
+	updateRuntimeConfig: (cb: (draft: Draft<C>) => void) => Promise<void>
+	getRuntimeConfig: () => Readonly<C>
 }
 
 /**
