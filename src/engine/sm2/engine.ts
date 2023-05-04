@@ -58,41 +58,36 @@ export class SM2Engine
 		)
 	}
 
-	/**
-	 * @deprecated This caching will be removed I guess.
-	 */
-	private currentCardData: Readonly<SM2EngineCardData | null> = null
 	private readonly transition = new SM2EngineCardDataTransition(this.config)
 
-	private loadCurrentCard = async (): Promise<void> => {
-		const now = await this.sessionDataHelper.getNowTimestamp()
+	private loadCurrentCardData =
+		async (): Promise<SM2EngineCardData | null> => {
+			const now = await this.sessionDataHelper.getNowTimestamp()
 
-		const card = await this.cardStorage.getTopEngineCardData(
-			now,
-			!this.sessionDataHelper.shouldPollNewCardIfAvailable
-		)
-		if (!card) {
-			this.currentCardData = null
-			return
-		}
-
-		if (card.type === SM2CardType.LEARNED) {
-			const isDataForTodayOrFutureDaysAllowed =
-				this.clock.getDay(card.desiredPresentationTimestamp) <=
-				this.clock.getDay(now) +
-					this.sessionDataHelper.learnedCardsDaysFutureAllowed
-
-			if (
-				!this.sessionDataHelper.shouldPollLearnedCardIfAvailable ||
-				!isDataForTodayOrFutureDaysAllowed
-			) {
-				this.currentCardData = null
-				return
+			const card = await this.cardStorage.getTopEngineCardData(
+				now,
+				!this.sessionDataHelper.shouldPollNewCardIfAvailable
+			)
+			if (!card) {
+				return null
 			}
-		}
 
-		this.currentCardData = card
-	}
+			if (card.type === SM2CardType.LEARNED) {
+				const isDataForTodayOrFutureDaysAllowed =
+					this.clock.getDay(card.desiredPresentationTimestamp) <=
+					this.clock.getDay(now) +
+						this.sessionDataHelper.learnedCardsDaysFutureAllowed
+
+				if (
+					!this.sessionDataHelper.shouldPollLearnedCardIfAvailable ||
+					!isDataForTodayOrFutureDaysAllowed
+				) {
+					return null
+				}
+			}
+
+			return card
+		}
 
 	public readonly cardStorage: SM2EngineCardStorage =
 		new SM2EngineCardStorage(
@@ -182,13 +177,7 @@ export class SM2Engine
 		await this.cardStorage.setEngineCardData(newData)
 	}
 
-	private getOrLoadCurrentCardData =
-		async (): Promise<SM2EngineCardData | null> => {
-			if (this.currentCardData) return this.currentCardData
-
-			await this.loadCurrentCard()
-			return this.currentCardData
-		}
+	private getOrLoadCurrentCardData = this.loadCurrentCardData
 
 	public getStats = async (): Promise<SM2EngineStats> => {
 		return await this.lowLevelStorage.transaction(async () => {
@@ -242,8 +231,9 @@ export class SM2Engine
 			const now = await this.sessionDataHelper.getNowTimestamp()
 
 			const currentCardData = await this.getOrLoadCurrentCardData()
-			if (!currentCardData)
+			if (!currentCardData) {
 				throw new Error(`No current card data; Can't answer`)
+			}
 
 			const newCardData = this.transition.transitionCardData(
 				now,
@@ -259,7 +249,7 @@ export class SM2Engine
 				newCardData,
 				CardDataChangeSource.ANSWER
 			)
-			await this.loadCurrentCard()
+			await this.loadCurrentCardData()
 		})
 	}
 
@@ -270,9 +260,6 @@ export class SM2Engine
 			// although it should still work
 			// it may introduce inconsistencies, when card is to be backed from
 			// LEARNING/LEARNED to new state.
-
-			// invalidate cached currentCardData
-			this.currentCardData = null
 
 			const res = await this.history.pop()
 			if (!res) return
@@ -301,8 +288,6 @@ export class SM2Engine
 	): Promise<void> => {
 		return await this.lowLevelStorage.transaction(async () => {
 			await this.initialize()
-
-			this.currentCardData = null
 
 			if (data.id !== id)
 				throw new Error(`Data id does not match id provided`)
@@ -346,7 +331,6 @@ export class SM2Engine
 			// TODO(teawithsand): throw if id already in use
 
 			const syncData = await this.sessionDataHelper.makeCardDataSyncData()
-			this.currentCardData = null
 
 			await this.cardStorage.appendNewCard({
 				type: SM2CardType.NEW,
@@ -364,8 +348,6 @@ export class SM2Engine
 
 	public deleteCard = async (id: string): Promise<void> => {
 		return await this.lowLevelStorage.transaction(async () => {
-			this.currentCardData = null
-
 			await this.initialize()
 			await this.cardStorage.deleteEngineCardData(id)
 		})
@@ -375,7 +357,7 @@ export class SM2Engine
 		config: SM2EngineDailyConfig
 	): Promise<void> => {
 		await this.initialize()
-		
+
 		await this.sessionDataHelper.updateSessionData((draft) => {
 			draft.dailyData.dailyConfig = config
 		})
