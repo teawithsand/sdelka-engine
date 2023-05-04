@@ -1,4 +1,4 @@
-import { GroupedQueueElementPropsExtractor } from "../../storage/queue"
+import { GroupedQueueElementPropsExtractor } from "../storage/queue"
 import { SM2CardType, SM2EngineCardData } from "./defines"
 import { cardTypeToQueueId } from "./innerUtil"
 

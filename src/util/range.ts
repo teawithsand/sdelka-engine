@@ -1,5 +1,5 @@
 import { IDBComparable, idbComparator } from "../pubutil"
-import { GroupedQueueRangeLike } from "../storage"
+import { GroupedQueueRangeLike } from "../card"
 
 const isIncl = (
 	incl: IDBComparable | undefined,

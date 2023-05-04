@@ -1,5 +1,5 @@
-import { GroupedQueue } from "../../storage/queue"
-import { CardId } from "../../storage/storage"
+import { GroupedQueue } from "../storage/queue"
+import { CardId } from "../storage/storage"
 import { TimestampMs } from "../../util/stl"
 import { Clock, DayTimestamp } from "../clock"
 import {

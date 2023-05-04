@@ -8,7 +8,7 @@ import {
 	SM2EngineDailyDailyData,
 	SM2EngineSessionData,
 } from "./defines"
-import { EngineStorage } from "../../storage"
+import { EngineStorage } from "../../card"
 import { Clock } from "../clock"
 
 export class SM2EngineSessionDataHelper {

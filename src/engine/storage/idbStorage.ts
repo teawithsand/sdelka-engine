@@ -1,6 +1,6 @@
-import { GroupedQueue, GroupedQueueElementPropsExtractor } from "../queue"
-import { EngineStorage } from "../storage"
-import { IndexedDBEngineStorageDB } from "./storageDB"
+import { GroupedQueue, GroupedQueueElementPropsExtractor } from "./queue"
+import { EngineStorage } from "./storage"
+import { IndexedDBEngineStorageDB } from "./idbStorageDB"
 
 /**
  * EngineStorage, which utilizes IndexedDB.

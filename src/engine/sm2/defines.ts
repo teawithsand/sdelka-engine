@@ -1,4 +1,4 @@
-import { CardId } from "../../storage/storage"
+import { CardId } from "../storage/storage"
 import { TimeMs } from "../../pubutil/time"
 import { DayTimestamp } from "../clock"
 import { TimestampMs } from "../../util/stl"

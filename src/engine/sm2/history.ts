@@ -1,7 +1,7 @@
 import {
 	GroupedQueue,
 	GroupedQueueElementPropsExtractor,
-} from "../../storage/queue"
+} from "../storage/queue"
 import { generateUUID } from "../../util/stl"
 import { Clock } from "../clock"
 import { SM2EngineCardData } from "./defines"

@@ -1,4 +1,4 @@
-import { EngineStorage } from "../../storage/storage"
+import { EngineStorage } from "../storage/storage"
 import { Clock } from "../clock"
 import {
 	CardDataBasedEngineManagement,

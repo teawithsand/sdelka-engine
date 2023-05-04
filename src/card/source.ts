@@ -1,4 +1,4 @@
-import { CardId } from "./storage"
+import { CardId } from "../engine/storage/storage"
 
 /**
  * Cursor, which iterates over cards, yielding their ids.

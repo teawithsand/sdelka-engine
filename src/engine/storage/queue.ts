@@ -1,4 +1,4 @@
-import { IDBComparable } from "../pubutil"
+import { IDBComparable } from "../../pubutil"
 
 export interface GroupedQueueElementProps {
 	readonly id: string

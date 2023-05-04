@@ -5,8 +5,8 @@ import {
 	GroupedQueue,
 	GroupedQueueElementPropsExtractor,
 	GroupedQueueRangeLike,
-} from "../queue"
-import { EngineStorage } from "../storage"
+} from "./queue"
+import { EngineStorage } from "./storage"
 
 type Data<CD, SD> = {
 	sessionData: SD | null
@@ -146,7 +146,7 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 				const res = elements[0]
 
 				const i = getQueueData().findIndex(
-					(e) => extractor(e).id === extractor(res).id
+					(e) => idbComparator(extractor(e).id, extractor(res).id) === 0
 				)
 				getQueueData().splice(i, 1)
 
@@ -163,7 +163,8 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 				const res = elements[elements.length - 1]
 
 				const i = getQueueData().findIndex(
-					(e) => extractor(e).id === extractor(res).id
+					(e) =>
+						idbComparator(extractor(e).id, extractor(res).id) === 0
 				)
 				getQueueData().splice(i, 1)
 
@@ -172,7 +173,11 @@ export class InMemoryEngineStorage<CD, SD> implements EngineStorage<CD, SD> {
 			add: async (element) => {
 				// Single element with given id may exist in queue
 				const i = getQueueData().findIndex(
-					(e) => extractor(e).id === extractor(element).id
+					(e) =>
+						idbComparator(
+							extractor(e).id,
+							extractor(element).id
+						) === 0
 				)
 				if (i >= 0) getQueueData().splice(i, 1)
 
