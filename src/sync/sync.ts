@@ -7,17 +7,28 @@ export enum RowSyncState {
 	DELETED = 2,
 }
 
+export type EmbeddedSyncData = {
+	lastModifiedNDTSC: NDTSC
+	lastModifiedTimestampMs: TimestampMs
+}
+
 export type RowSyncData = {
 	id: string
 
-	/**
-	 * When was row last modified on local device.
-	 * Used to determine which version remote or local should be preserved.
-	 */
-	locallyLastsModified: TimestampMs
+	// 
+	// When was row last modified on local device.
+	// Used to determine which version remote or local should be preserved.
+	//
+	// Conflict resolution is done using external data, not only data stored here.
+	// If data was modified, which should be detected, then syncing on both sides has to use some smart 
+	// algo to pick the winner.
+	// 
+	// locallyLastsModified: TimestampMs
 
 	/**
 	 * If row still exists or was deleted.
+	 * 
+	 * Required in order to determine, which deletes have to be pushed.
 	 */
 	state: RowSyncState
 
@@ -36,23 +47,11 @@ export type RowSyncData = {
 	} | null
 }
 
-export type ClientSyncData = {
-	/**
-	 * ID of client, which performs synchronization.
-	 */
-	id: string
-
-	/**
-	 * ID of dataset, which is being synchronized.
-	 */
-	datasetId: string
-}
-
-export interface SyncDataStore {
+export interface SyncDataStore<C> {
 	transaction: <R>(cb: () => Promise<R>) => Promise<R>
 
-	getClientSyncData: () => Promise<ClientSyncData>
-	setClientSyncData: (csd: ClientSyncData) => Promise<void>
+	getClientSyncData: () => Promise<C>
+	setClientSyncData: (csd: C) => Promise<void>
 
 	setRowSyncData: (rsd: RowSyncData) => Promise<void>
 	deleteRowSyncData: (id: string) => Promise<void>
@@ -60,3 +59,16 @@ export interface SyncDataStore {
 	getSynchronizedAfterNDTSC: (ndtsc: NDTSC) => Cursor<RowSyncData>
 	getNotYetSynchronized: () => Cursor<RowSyncData>
 }
+
+export interface SyncStoreAdapter<T> {
+	getElement: (id: string) => Promise<T | null>
+	setElement: (id: string, data: T) => Promise<void>
+	extractEmbeddedSyncData: (data: T) => EmbeddedSyncData
+
+	/**
+	 * Using data of local and remote element, pick one, which should be used.
+	 * 
+	 * TODO(teawithsand): allow user interaction here
+	 */
+	pickElement: (local: T, remote: T) => Promise<T>
+}	
