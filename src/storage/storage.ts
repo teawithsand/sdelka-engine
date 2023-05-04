@@ -1,6 +1,4 @@
-import { Cursor } from "../pubutil"
-import { SyncRequest } from "../util/sync"
-import { GroupedQueueElementPropsExtractor, GroupedQueue } from "./queue"
+import { GroupedQueue, GroupedQueueElementPropsExtractor } from "./queue"
 
 export type CardId = string
 
