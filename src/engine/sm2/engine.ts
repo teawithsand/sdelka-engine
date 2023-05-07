@@ -1,14 +1,14 @@
-import { EngineStorage } from "../storage/storage"
 import { Clock } from "../clock"
 import {
 	CardDataBasedEngineManagement,
 	CardEngineManagement,
-	RuntimeConfigurableEngine,
 	Engine,
+	RuntimeConfigurableEngine,
 } from "../engine"
+import { EngineStorage } from "../storage/storage"
 
-import { Cursor } from "../../pubutil"
-import { SyncRequest } from "../../util/sync"
+import produce from "immer"
+import { WritableDraft } from "immer/dist/internal"
 import {
 	SM2CardType,
 	SM2EngineAnswer,
@@ -26,8 +26,6 @@ import { SM2EngineQueueElementExtractor as SM2EngineCardQueueElementExtractor } 
 import { SM2EngineSessionDataHelper } from "./sessionData"
 import { SM2EngineStorage as SM2EngineCardStorage } from "./storage"
 import { SM2EngineCardDataTransition } from "./transition"
-import { WritableDraft } from "immer/dist/internal"
-import produce from "immer"
 
 enum CardDataChangeSource {
 	ANSWER = 1,
@@ -305,12 +303,6 @@ export class SM2Engine
 
 			return (await this.cardStorage.getEngineCardData(id)) !== null
 		})
-	}
-
-	public getEngineCardDataForSyncRequest = (
-		req: SyncRequest
-	): Cursor<SM2EngineCardData> => {
-		throw new Error(`NIY`)
 	}
 
 	public hasCard = async (id: string): Promise<boolean> => {

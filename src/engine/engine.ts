@@ -1,6 +1,4 @@
 import { Draft } from "immer"
-import { Cursor } from "../pubutil"
-import { SyncRequest } from "../util/sync"
 
 /**
  * Engine, which like SM2 engine uses key/value+features DB to run whole learning process.
@@ -12,8 +10,6 @@ export interface CardDataBasedEngineManagement<T> {
 	getEngineCardData: (id: string) => Promise<T | null>
 	setEngineCardData: (id: string, data: T) => Promise<void>
 	hasEngineCardData: (id: string) => Promise<boolean>
-
-	getEngineCardDataForSyncRequest: (req: SyncRequest) => Cursor<T>
 }
 
 /**

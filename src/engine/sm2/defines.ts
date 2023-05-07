@@ -2,7 +2,7 @@ import { CardId } from "../storage/storage"
 import { TimeMs } from "../../pubutil/time"
 import { DayTimestamp } from "../clock"
 import { TimestampMs } from "../../util/stl"
-import { NDTSC, SyncData } from "../../util/sync"
+import { NDTSC, EmbeddedSyncData } from "../../util/sync"
 
 export enum SM2EngineAnswer {
 	EASY = 1,
@@ -151,7 +151,7 @@ export type SM2EngineCardData = {
 	/**
 	 * SyncData for each card, so we know when it was updated, so we can synchronize different learning sessions.
 	 */
-	syncData: SyncData
+	syncData: EmbeddedSyncData
 } & (
 	| {
 			type: SM2CardType.NEW

@@ -1,6 +1,6 @@
 import produce, { Draft } from "immer"
 import { TimestampMs } from "../../util/stl"
-import { NDTSC_BASE, SyncData } from "../../util/sync"
+import { NDTSC_BASE, EmbeddedSyncData } from "../../util/sync"
 import {
 	SM2EngineCardData,
 	SM2EngineConfig,
@@ -185,8 +185,8 @@ export class SM2EngineSessionDataHelper {
 		return ts
 	}
 
-	makeCardDataSyncData = async (now?: TimestampMs): Promise<SyncData> => {
-		const res: SyncData = {
+	makeCardDataSyncData = async (now?: TimestampMs): Promise<EmbeddedSyncData> => {
+		const res: EmbeddedSyncData = {
 			ndtsc: this.sessionData.cardDataNdtsc,
 			timestamp: now ?? (await this.getNowTimestamp()),
 		}
