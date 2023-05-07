@@ -1,7 +1,10 @@
-import { IndexedDBEngineStorage, IndexedDBEngineStorageDB } from "."
-import { IDBComparable } from "../pubutil"
-import { generateUUID } from "../util/stl"
-import { InMemoryEngineStorage } from "./memory/storage"
+import {
+	InMemoryEngineStorage,
+	IndexedDBEngineStorage,
+	IndexedDBEngineStorageDB,
+} from "."
+import { IDBComparable } from "../../pubutil"
+import { generateUUID } from "../../util/stl"
 import { GroupedQueue, GroupedQueueRangeLike } from "./queue"
 import { EngineStorage } from "./storage"
 
@@ -245,7 +248,9 @@ const testStorage = (storageFactory: () => EngineStorage<Data, Data>) => {
 		expect(await queue.peekBack(["G1"])).toEqual(elements[0])
 
 		expect(await queue.peekFront([])).toEqual(elements[elements.length - 1])
-		expect(await queue.peekFront(["G1"])).toEqual(elements[elements.length - 1])
+		expect(await queue.peekFront(["G1"])).toEqual(
+			elements[elements.length - 1]
+		)
 	})
 }
 

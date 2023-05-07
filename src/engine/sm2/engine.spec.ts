@@ -1,14 +1,8 @@
-import { IndexedDBEngineStorageDB } from "../../storage"
-import { InMemoryEngineStorage } from "../../storage/memory"
 import { TimestampMs, generateUUID, throwExpression } from "../../util/stl"
 import { DebugClock } from "../clock"
+import { InMemoryEngineStorage } from "../storage"
 import { SM2CardType, SM2EngineAnswer, SM2EngineConfig } from "./defines"
 import { SM2Engine } from "./engine"
-
-type Card = {
-	id: string
-	i: number
-}
 
 const config: SM2EngineConfig = {
 	initialDailyConfig: {
@@ -163,7 +157,7 @@ describe("SM2Engine", () => {
 	})
 
 	it("can undo card when there are added/removed cards", async () => {
-		await engine.updateRuntimeConfig(draft => {
+		await engine.updateRuntimeConfig((draft) => {
 			draft.additionalNewCardsToProcess += 30
 		})
 
@@ -176,7 +170,7 @@ describe("SM2Engine", () => {
 			await engine.answer(SM2EngineAnswer.EASY)
 		}
 
-		await engine.updateRuntimeConfig(draft => {
+		await engine.updateRuntimeConfig((draft) => {
 			draft.additionalNewCardsToProcess -= 10
 		})
 		const oldStats = await engine.getStats()

@@ -1,7 +1,7 @@
-import { InMemoryEngineStorage } from "../../storage/memory/storage"
 import { TimestampMs, generateUUID } from "../../util/stl"
 import { DUMMY_SYNC_DATA } from "../../util/sync"
 import { DebugClock } from "../clock"
+import { InMemoryEngineStorage } from "../storage"
 import { SM2CardType } from "./defines"
 import { SM2EngineQueueElementExtractor } from "./queues"
 import { SM2EngineStorage } from "./storage"

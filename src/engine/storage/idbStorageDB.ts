@@ -6,7 +6,7 @@ import {
 	MIN_IDB_KEY,
 } from "../../pubutil"
 import { dispatchRange } from "../../util/range"
-import { GroupedQueueRangeLike } from "../queue"
+import { GroupedQueueRangeLike } from "./queue"
 
 export type SessionStorageEntryDBEntity = {
 	session: string // in fact session could be id, but whatever
