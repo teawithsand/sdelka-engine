@@ -51,3 +51,4 @@ export const idbComparator = (a: IDBComparable, b: IDBComparable): number => {
 
 export const MAX_IDB_KEY: IDBComparable = [[]]
 export const MIN_IDB_KEY: IDBComparable = -Infinity
+export const IDB_LIMIT_INF = 2**32 - 1

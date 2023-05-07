@@ -32,7 +32,7 @@ export class AsyncCursor<T> implements Cursor<T> {
 	constructor(
 		private readonly adapter: {
 			fetch: (offset: number, limit: number) => Promise<T[]>
-			left: (offset: number) => Promise<number>
+			count: () => Promise<number>
 		},
 		private readonly batchSize = 30
 	) {}
@@ -75,6 +75,7 @@ export class AsyncCursor<T> implements Cursor<T> {
 	}
 
 	left = async (): Promise<number> => {
-		return await this.adapter.left(this.offset)
+		// TODO(teawithsand): fix all off-by-one mistakes in this line
+		return await this.adapter.count() - this.offset + 1
 	}
 }
