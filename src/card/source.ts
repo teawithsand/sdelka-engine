@@ -2,8 +2,10 @@ import { CardId } from "../engine/storage/storage"
 
 /**
  * Cursor, which iterates over cards, yielding their ids.
- * 
+ *
  * Right now cursor is not allowed to yield same id twice, but it's subject to change in future.
+ * 
+ * @deprecated CardStorages are used from now on
  */
 export interface CardSourceCursor {
 	readonly currentId: CardId | null
@@ -32,6 +34,9 @@ export interface CardSourceCursor {
 	clone: () => this
 }
 
+/**
+ * @deprecated CardStorages are used from now on
+ */
 export interface CardSource<T> {
 	getCard: (cardId: CardId) => Promise<T | null>
 
@@ -43,6 +48,8 @@ export interface CardSource<T> {
 
 /**
  * CardSource, which may have cards deleted from and appended to.
+ * 
+ * @deprecated CardStorages are used from now on
  */
 export interface MutableCardSource<T> extends CardSource<T> {
 	// TODO(teawithsand): function for bringing card to the end(like it was deleted and then appended)
@@ -53,7 +60,7 @@ export interface MutableCardSource<T> extends CardSource<T> {
 	/**
 	 * Disposes all resources associated with that source.
 	 * Any kind of cursor, which was associated with it should be used no more, as it's UB.
-	 * 
+	 *
 	 * If this source has metadata associated with it, it also gets cleared.
 	 */
 	clear: () => Promise<void>
@@ -61,13 +68,15 @@ export interface MutableCardSource<T> extends CardSource<T> {
 
 /**
  * Card source capable of storing metadata about whole collection of cards.
+ * 
+ * @deprecated CardStorages are used from now on
  */
 export interface MetadataCardSource<T, M> extends CardSource<T> {
 	/**
 	 * Returns last set metadata, or null if none is set.
 	 */
 	getMetadata: () => Promise<M | null>
-	
+
 	/**
 	 * Sets metadata of this source.
 	 */
