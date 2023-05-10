@@ -9,6 +9,10 @@ import {
 } from "./defines"
 import { SM2EngineQueueId } from "./innerUtil"
 
+
+// TODO(teawithsand): integrate storing removed card ids until sync
+//  create deleted queue with it's own data type
+
 export class SM2EngineStorage {
 	constructor(
 		public readonly queue: GroupedQueue<SM2EngineCardData>,

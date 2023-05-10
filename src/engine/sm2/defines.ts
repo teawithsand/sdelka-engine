@@ -56,13 +56,13 @@ export type SM2EngineSessionData = {
 	dailyData: SM2EngineDailyDailyData
 
 	/**
-	 * NDTSC updated each time card data gets updated.
+	 * NDTSC updated each time _card data_ gets updated.
 	 * Used for synchronization.
 	 */
 	cardDataNdtsc: NDTSC
 
 	/**
-	 * NDTSC updated each time card is added to engine.
+	 * NDTSC updated each time _card_ is added to engine.
 	 * Used to maintain order between new cards, which have the same priority.
 	 */
 	cardInsertNdtsc: NDTSC

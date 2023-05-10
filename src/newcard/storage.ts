@@ -10,8 +10,8 @@ export interface ExtractedCardData {
 	id: string
 	collectionId: string
 	tags: string[]
-	priority: number
 
+	priority: number
 	syncData: EmbeddedSyncData
 }
 
