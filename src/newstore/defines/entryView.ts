@@ -14,13 +14,16 @@ export interface MutableEntriesView<CE, CD> extends EntriesView<CE, CD> {
 export interface EngineEntriesView<CE, CD> extends EntriesView<CE, CD> {
 	getTopmostQueueEntry: (queues: IDBComparable[]) => Promise<string | null>
 	getQueueLength: (queue: IDBComparable) => Promise<number>
+	getQueueLengthUntil: (queue: IDBComparable, element: IDBComparable) => Promise<number>
+	getQueueLengthAfter: (queue: IDBComparable, element: IDBComparable) => Promise<number>
 }
 
 export interface EntryAccess<CE, CD> {
 	readonly id: string
 
+	getData: () => Promise<EntryEntity<CE, CD> | null>
+
 	updateEngineData: (engineData: CE) => Promise<void>
 	updateCardData: (cardData: CD) => Promise<void>
-	getData: () => Promise<EntryEntity<CE, CD> | null>
 	delete: () => Promise<void>
 }

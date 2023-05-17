@@ -1,25 +1,37 @@
 import Dexie, { Table } from "dexie"
-import { Collection, DeletedEntry, Entry } from "./defines"
+import { Collection, DeletedEntry, Entry, HistoryEntry } from "./defines"
 
-export class DB<CE, CD, SD> extends Dexie {
-
+export class DB<
+	CardEngineData,
+	CardData,
+	CollectionData,
+	EngineCollectionData,
+	EngineHistoryData
+> extends Dexie {
 	// Core tables
-	public readonly entries!: Table<Entry<CE, CD>>
-	public readonly collections!: Table<Collection<SD>>
+	public readonly entries!: Table<Entry<CardEngineData, CardData>>
+	public readonly collections!: Table<
+		Collection<CollectionData, EngineCollectionData>
+	>
 
-	// Support tables - synchronization
+	// Support tables - synchronization & history
 	public readonly deletedEntries!: Table<DeletedEntry>
+	public readonly historyEntries!: Table<HistoryEntry<EngineHistoryData>>
 
 	// Support tables - engine
 
-	// TODO(teawithsand): a few more tables for features like history 
+	// TODO(teawithsand): a few more tables for features like history
 
 	constructor(name: string) {
 		super(name)
 		this.version(1).stores({
-			entries: "id, collectionId, [collectionId+syncKey], [collectionId+queue+priority+desiredPresentationTs]",
+			entries:
+				"id, collectionId, [collectionId+syncKey], [collectionId+queue+priority+desiredPresentationTs]",
 			collections: "id, syncKey",
-			deletedEntries: "id, entryKey, collectionKey, collectionId, entryId"
+			deletedEntries:
+				"id, entryKey, collectionKey, collectionId, entryId",
+			historyEntries:
+				"id, collectionId, [collectionId+entryId], [collectionId+ordinalNumber]",
 		})
 	}
 }

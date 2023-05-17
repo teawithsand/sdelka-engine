@@ -1,32 +1,48 @@
-import { CollectionDerivedDataExtractor, CollectionEntity } from "./collection"
-import {
-	EntryCardDerivedDataExtractor,
-	EntryEngineDerivedDataExtractor,
-} from "./entry"
+import { CollectionEntity } from "./collection"
 import { EngineEntriesView, EntriesView, MutableEntriesView } from "./entryView"
 
-export interface EntryOperators<CE, CD> {
-	defaultEngineDataGenerator: (cardData: CD) => CE
-	engineDataExtractor: EntryEngineDerivedDataExtractor<CE>
-	cardDataExtractor: EntryCardDerivedDataExtractor<CD>
+export interface CardCollectionAccess<CLD, ESD, H> {
+	updateCollectionData: (data: CLD) => Promise<void>
+	updateEngineData: (data: ESD) => Promise<void>
+	delete: () => Promise<void>
+
+	pushHistoryEntry: (entry: H) => Promise<void>
+	peekHistoryEntry: () => Promise<H | null>
+	popHistoryEntry: () => Promise<void>
 }
 
-export interface CollectionOperators<SD> {
-	collectionDataExtractor: CollectionDerivedDataExtractor<SD>
-}
-
-export interface CardCollectionsStore<CE, CD, SD> {
+export interface CardCollectionsStore<
+	CardEngineData,
+	CardData,
+	CollectionData,
+	EngineCollectionData,
+	EngineHistoryData
+> {
 	transaction: <R>(cb: () => Promise<R>) => Promise<R>
 
-	getCollections: () => Promise<CollectionEntity<SD>[]>
+	getCollections: () => Promise<
+		CollectionEntity<CollectionData, EngineCollectionData>[]
+	>
+	createCollection: (
+		collectionData: CollectionData
+	) => Promise<CollectionEntity<CollectionData, EngineCollectionData>>
 
-	createCollection: (data: SD) => Promise<CollectionEntity<SD>>
-	updateCollection: (id: string, data: SD) => Promise<void>
-	deleteCollection: (id: string) => Promise<void>
+	getAccess: (
+		id: string
+	) => Promise<
+		CardCollectionAccess<
+			CollectionData,
+			EngineCollectionData,
+			EngineHistoryData
+		>
+	>
 
 	getCollectionEntriesView: (
 		id: string
-	) => MutableEntriesView<CE, CD> & EngineEntriesView<CE, CD>
+	) => MutableEntriesView<CardEngineData, CardData> &
+		EngineEntriesView<CardEngineData, CardData>
 
-	getCollectionSyncEntriesView: (id: string) => EntriesView<CE, CD>
+	getCollectionSyncEntriesView: (
+		id: string
+	) => EntriesView<CardEngineData, CardData>
 }

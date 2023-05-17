@@ -7,13 +7,11 @@ export type EntryEngineDerivedDataExtractor<T> = (
 export interface EntryEngineDerivedData {
 	queue: IDBComparable
 	queuePriority: IDBComparable
-	
+
 	isOutOfSync: boolean
 }
 
-export type EntryCardDerivedDataExtractor<T> = (
-	data: T
-) => EntryCardDerivedData
+export type EntryCardDerivedDataExtractor<T> = (data: T) => EntryCardDerivedData
 
 export interface EntryCardDerivedData {
 	syncKey: string
@@ -24,7 +22,7 @@ export interface EntryCardDerivedData {
 
 export type Entry<E, C> = {
 	// embedded fields
-	engineData: E
+	engineData: E | null
 	cardData: C
 
 	// misc fields
@@ -47,7 +45,7 @@ export type Entry<E, C> = {
 
 export interface EntryEntity<E, C> {
 	id: string
-	engineData: E
+	engineData: E | null
 	cardData: C
 }
 
@@ -61,3 +59,24 @@ export type DeletedEntry = {
 	collectionKey: string
 }
 export type DeletedEntryEntity = DeletedEntry
+
+export type HistoryEntry<H> = {
+	id: string
+	
+	entryId: string
+	collectionId: string
+
+	ordinalNumber: number
+
+	data: H
+}
+
+export type HistoryEntryEntity<E> = HistoryEntry<E>
+
+export type HistoryEntryDerivedDataExtractor<T> = (
+	data: T
+) => HistoryEntryDerivedData
+
+export interface HistoryEntryDerivedData {
+	entryId: string
+}

@@ -7,21 +7,20 @@ export interface CollectionDerivedData {
 	isOutOfSync: boolean
 }
 
-
-export type Collection<SD> = {
+export type Collection<CLD, ESD> = {
 	// embedded
-	data: SD
+	collectonData: CLD
+	engineData: ESD | null
 
 	// own
 	id: string
 
 	// sync
 	syncKey: string
-	
-	isOutOfSync: boolean
 }
 
-export interface CollectionEntity<T> {
+export interface CollectionEntity<CLD, ESD> {
 	id: string
-	data: T,
+	collectionData: CLD
+	engineData: ESD | null
 }
