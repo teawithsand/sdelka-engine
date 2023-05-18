@@ -3,7 +3,7 @@ import {
 	DBCollectionAccess,
 	DBCollectionsStore,
 	EngineEntriesView,
-} from "../../newstore"
+} from "../../store"
 import { IDBComparable } from "../../pubutil"
 import {
 	EngineSessionData,

@@ -1,4 +1,4 @@
-import { DerivedEntryEngineDataExtractor } from "../../newstore"
+import { DerivedEntryEngineDataExtractor } from "../../store"
 import { EngineEntryData, EngineEntryDataType } from "./entry"
 import { EngineQueueType } from "./queue"
 
