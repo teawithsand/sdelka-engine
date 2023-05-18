@@ -9,7 +9,7 @@ export interface CollectionDerivedData {
 
 export type Collection<CLD, ESD> = {
 	// embedded
-	collectonData: CLD
+	collectionData: CLD
 	engineData: ESD | null
 
 	// own

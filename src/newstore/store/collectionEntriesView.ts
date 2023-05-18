@@ -19,46 +19,52 @@ import {
 } from "../defines"
 import { DBEntryAccess } from "./entryAccess"
 
-export class DBCollectionEntriesView<EngineEntryData, EntryData>
+export class DBCollectionEntriesView<EngineEntryData, UserData>
 	implements
-		EntriesView<EngineEntryData, EntryData>,
-		MutableEntriesView<EngineEntryData, EntryData>,
-		EngineEntriesView<EngineEntryData, EntryData>
+		EntriesView<EngineEntryData, UserData>,
+		MutableEntriesView<EngineEntryData, UserData>,
+		EngineEntriesView<EngineEntryData, UserData>
 {
 	constructor(
-		private readonly db: DB<EngineEntryData, EntryData, any, any, any>,
+		private readonly db: DB<EngineEntryData, UserData, any, any, any>,
 		private readonly operators: EntryOperators<
 			EngineEntryData,
-			EntryData,
+			UserData,
 			any
 		>,
 		private readonly collectionId: string
 	) {}
 
-	iterate = (): Cursor<EntryEntity<EngineEntryData, EntryData>> => {
+	iterate = (): Cursor<EntryEntity<EngineEntryData, UserData>> => {
 		const query = () =>
 			this.db.entries.where("[collectionId+id]").equals(this.collectionId)
 
 		return new AsyncCursor({
 			fetch: async (offset, limit) => {
-				return await query().offset(offset).limit(limit).toArray()
+				return (
+					await query().offset(offset).limit(limit).toArray()
+				).map(
+					(e): EntryEntity<EngineEntryData, UserData> => ({
+						id: e.id,
+						userData: e.userData,
+						engineData: e.engineData,
+					})
+				)
 			},
 			count: async () => await query().count(),
 		})
 	}
 
-	addCard = async (
-		cardData: EntryData,
-		engineData: EngineEntryData
-	): Promise<void> => {
-		const extractedCard = this.operators.cardDataExtractor(cardData)
+	addCard = async (userData: UserData): Promise<void> => {
+		const extractedCard = this.operators.cardDataExtractor(userData)
+		const engineData = this.operators.engineDataInitializer(userData)
 		const extractedEngine = this.operators.engineDataExtractor(engineData)
 
-		const entry: Entry<EngineEntryData, EntryData> = {
+		const entry: Entry<EngineEntryData, UserData> = {
 			id: generateUUID(),
 
 			engineData,
-			cardData,
+			userData: userData,
 			collectionId: this.collectionId,
 
 			syncKey: extractedCard.syncKey,
@@ -90,20 +96,20 @@ export class DBCollectionEntriesView<EngineEntryData, EntryData>
 
 	getData = async (
 		id: string
-	): Promise<EntryEntity<EngineEntryData, EntryData> | null> => {
+	): Promise<EntryEntity<EngineEntryData, UserData> | null> => {
 		return (await (await this.getAccess(id)).getData()) ?? null
 	}
 
 	getAccess = async (
 		id: string
-	): Promise<EntryAccess<EngineEntryData, EntryData>> => {
+	): Promise<EntryAccess<EngineEntryData, UserData>> => {
 		return new DBEntryAccess(this.db, this.operators, id)
 	}
 
 	getTopmostQueueEntry = async (
 		queues: IDBComparable[]
 	): Promise<string | null> => {
-		const results: Entry<EngineEntryData, EntryData>[] = []
+		const results: Entry<EngineEntryData, UserData>[] = []
 
 		for (const queue of queues) {
 			const entry = await this.db.entries

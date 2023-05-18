@@ -62,7 +62,7 @@ export class DBCollectionsStore<
 	> => {
 		return (await this.db.collections.toArray()).map((e) => ({
 			id: e.id,
-			collectionData: e.collectonData,
+			collectionData: e.collectionData,
 			engineData: e.engineData,
 		}))
 	}
@@ -86,7 +86,7 @@ export class DBCollectionsStore<
 
 		const collection: Collection<CollectionData, EngineCollectionData> = {
 			id: generateUUID(),
-			collectonData: data,
+			collectionData: data,
 			engineData: null,
 			syncKey: extracted.syncKey,
 		}
@@ -95,7 +95,7 @@ export class DBCollectionsStore<
 
 		return {
 			id: collection.id,
-			collectionData: collection.collectonData,
+			collectionData: collection.collectionData,
 			engineData: collection.engineData,
 		}
 	}

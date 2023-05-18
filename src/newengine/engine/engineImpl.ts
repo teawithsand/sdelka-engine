@@ -1,4 +1,4 @@
-import { Clock } from "../../engine"
+import { Clock } from "../../pubutil"
 import { TimestampMs } from "../../util/stl"
 import {
 	EngineAnswer,
@@ -10,9 +10,9 @@ import {
 } from "../defines"
 import { EngineStorage } from "../storage"
 import { Engine } from "./engine"
-import { EngineEntryTransitioner, EngineSessionDataHelper } from "./helper"
+import { EngineEntryTransition, EngineSessionDataHelper } from "./helper"
 
-enum DataTansitionSource {
+enum DataTransitionSource {
 	EXTERNAL = 1,
 	ANSWER = 2,
 	HISTORY = 3,
@@ -31,7 +31,7 @@ export class EngineImpl implements Engine {
 		this.config
 	)
 
-	private readonly transition!: EngineEntryTransitioner
+	private readonly transition!: EngineEntryTransition
 
 	private isCurrentCardCacheValid: boolean = false
 	private currentCardCache: string | null = null
@@ -154,11 +154,11 @@ export class EngineImpl implements Engine {
 		_id: string,
 		oldData: EngineEntryData,
 		newData: EngineEntryData,
-		source: DataTansitionSource
+		source: DataTransitionSource
 	) => {
 		const isHistoryOrAnswer =
-			source === DataTansitionSource.HISTORY ||
-			source === DataTansitionSource.ANSWER
+			source === DataTransitionSource.HISTORY ||
+			source === DataTransitionSource.ANSWER
 
 		if (
 			oldData.type === EngineEntryDataType.NEW &&
@@ -185,7 +185,7 @@ export class EngineImpl implements Engine {
 
 		if (
 			oldData.type === EngineEntryDataType.LEARNED &&
-			source === DataTansitionSource.ANSWER
+			source === DataTransitionSource.ANSWER
 		) {
 			await this.sessionDataHelper.updateSessionData((draft) => {
 				draft.dailyData.processedLearnedCount += 1
@@ -194,7 +194,7 @@ export class EngineImpl implements Engine {
 
 		if (
 			newData.type === EngineEntryDataType.LEARNED &&
-			source === DataTansitionSource.HISTORY
+			source === DataTransitionSource.HISTORY
 		) {
 			await this.sessionDataHelper.updateSessionData((draft) => {
 				draft.dailyData.processedLearnedCount = Math.max(
@@ -251,7 +251,7 @@ export class EngineImpl implements Engine {
 				currentCardId,
 				oldData.data,
 				newData,
-				DataTansitionSource.ANSWER
+				DataTransitionSource.ANSWER
 			)
 
 			await this.sessionDataHelper.considerSwitchingDay(now)
@@ -294,7 +294,7 @@ export class EngineImpl implements Engine {
 					oldData.id,
 					oldData.data,
 					historyData.data,
-					DataTansitionSource.HISTORY
+					DataTransitionSource.HISTORY
 				)
 
 				await this.storage.popHistoryEntry()
@@ -329,7 +329,7 @@ export class EngineImpl implements Engine {
 				id,
 				oldData.data,
 				data,
-				DataTansitionSource.EXTERNAL
+				DataTransitionSource.EXTERNAL
 			)
 		})
 

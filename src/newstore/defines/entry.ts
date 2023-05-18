@@ -1,29 +1,9 @@
 import { IDBComparable } from "../../pubutil"
 
-export type EntryEngineDerivedDataExtractor<T> = (
-	data: T
-) => EntryEngineDerivedData
-
-export interface EntryEngineDerivedData {
-	queue: IDBComparable
-	queuePriority: IDBComparable
-
-	isOutOfSync: boolean
-}
-
-export type EntryCardDerivedDataExtractor<T> = (data: T) => EntryCardDerivedData
-
-export interface EntryCardDerivedData {
-	syncKey: string
-	tags: string[]
-
-	isOutOfSync: boolean
-}
-
 export type Entry<E, C> = {
 	// embedded fields
-	engineData: E | null
-	cardData: C
+	engineData: E
+	userData: C
 
 	// misc fields
 	id: string
@@ -45,8 +25,8 @@ export type Entry<E, C> = {
 
 export interface EntryEntity<E, C> {
 	id: string
-	engineData: E | null
-	cardData: C
+	engineData: E
+	userData: C
 }
 
 export type DeletedEntry = {
@@ -72,11 +52,3 @@ export type HistoryEntry<H> = {
 }
 
 export type HistoryEntryEntity<E> = HistoryEntry<E>
-
-export type HistoryEntryDerivedDataExtractor<T> = (
-	data: T
-) => HistoryEntryDerivedData
-
-export interface HistoryEntryDerivedData {
-	entryId: string
-}

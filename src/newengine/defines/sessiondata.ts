@@ -1,4 +1,3 @@
-import { DayTimestamp } from "../../engine"
 import { TimestampMs } from "../../util/stl"
 import { EngineDailyConfig } from "./config"
 
@@ -8,7 +7,7 @@ export type EngineDailyData = {
 	/**
 	 * DayTimestamp this data was generated at. Stored in order to check if it's up-to-date. 
 	 */
-	dayTimestamp: DayTimestamp
+	dayTimestamp: number
 
 	/**
 	 * How many cards were polled from LEARNED queue today.

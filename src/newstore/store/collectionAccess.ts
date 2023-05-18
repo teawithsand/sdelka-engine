@@ -51,7 +51,7 @@ export class DBCollectionAccess<
 		
 		return {
 			id: this.collectionId,
-			collectionData: data.collectonData,
+			collectionData: data.collectionData,
 			engineData: data.engineData,
 		}
 	}
@@ -59,7 +59,7 @@ export class DBCollectionAccess<
 	updateCollectionData = async (data: CollectionData): Promise<void> => {
 		await this.db.transaction("rw", [this.db.collections], async () => {
 			const collection = await this.obtainData()
-			collection.collectonData = data
+			collection.collectionData = data
 			await this.db.collections.put(collection)
 		})
 	}

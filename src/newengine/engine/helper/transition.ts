@@ -7,15 +7,15 @@ import {
 	EngineEntryDataType,
 } from "../../defines"
 
-export interface EngineEntryTransitioner {
+export interface EngineEntryTransition {
 	transformData: (
 		now: TimestampMs,
-		currentData: EngineEntryData | null,
+		currentData: EngineEntryData,
 		answer: EngineAnswer
 	) => Promise<EngineEntryData>
 }
 
-export class EngineEntryTransitionerImpl implements EngineEntryTransitioner {
+export class EngineEntryTransitionImpl implements EngineEntryTransition {
 	constructor(protected readonly config: EngineConfig) {}
 
 	private boundEaseFactor = (ef: number) => {
@@ -52,14 +52,9 @@ export class EngineEntryTransitionerImpl implements EngineEntryTransitioner {
 
 	public transformData = async (
 		now: TimestampMs,
-		data: EngineEntryData | null,
+		data: EngineEntryData,
 		answer: EngineAnswer
 	): Promise<EngineEntryData> => {
-		data = data ?? {
-			type: EngineEntryDataType.NEW,
-			ndtscOffset: 0,
-			userPriorityOffset: 0,
-		}
 		data = produce(data, (data) => {
 			if (
 				data.type === EngineEntryDataType.LEARNED ||

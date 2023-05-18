@@ -1,4 +1,4 @@
-import { TimeMs } from "../../pubutil"
+import { IDBComparable, TimeMs } from "../../pubutil"
 import { TimestampMs } from "../../util/stl"
 
 export enum EngineEntryDataType {
@@ -8,11 +8,13 @@ export enum EngineEntryDataType {
 	RELEARNING = 3,
 }
 
-export type EngineEntryData = {} & (
+export type EngineEntryData = {
+	isOutOfSync?: boolean
+} & (
 	| {
 			type: EngineEntryDataType.NEW
-			ndtscOffset: number
-			userPriorityOffset: number
+			ordinalNumber: IDBComparable
+			userPriority: IDBComparable
 	  }
 	| ({
 			desiredPresentationTimestamp: TimestampMs

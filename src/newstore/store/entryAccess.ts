@@ -44,7 +44,11 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 			const newData: typeof data = {
 				...data,
 
-				cardData,
+				engineData: this.operators.engineDataUpdater(
+					cardData,
+					data.engineData
+				),
+				userData: cardData,
 
 				syncKey: extracted.syncKey,
 				tags: extracted.tags,
@@ -64,7 +68,7 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 
 		return {
 			id: value.id,
-			cardData: value.cardData,
+			userData: value.userData,
 			engineData: value.engineData,
 		}
 	}

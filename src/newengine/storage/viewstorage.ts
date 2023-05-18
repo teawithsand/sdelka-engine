@@ -1,3 +1,4 @@
+import produce from "immer"
 import {
 	DBCollectionAccess,
 	DBCollectionsStore,
@@ -30,7 +31,7 @@ export class DBEngineStorage implements EngineStorage {
 	) {}
 
 	transaction = this.db.transaction
-	
+
 	setSessionData = async (data: EngineSessionData) => {
 		await this.collectionAccess.updateEngineData(data)
 	}
@@ -61,6 +62,12 @@ export class DBEngineStorage implements EngineStorage {
 		await this.transaction(async () => {
 			const access = await this.view.getAccess(id)
 			if (!access) return
+
+			// This is ok
+			// as this storage is used exclusively for engine
+			data = produce(data, (draft) => {
+				draft.isOutOfSync = true
+			})
 			await access.updateEngineData(data)
 		})
 	}

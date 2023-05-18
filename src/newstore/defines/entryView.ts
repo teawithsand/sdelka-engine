@@ -8,7 +8,7 @@ export interface EntriesView<CE, CD> {
 }
 
 export interface MutableEntriesView<CE, CD> extends EntriesView<CE, CD> {
-	addCard: (cardData: CD, engineData: CE) => Promise<void>
+	addCard: (cardData: CD) => Promise<void>
 }
 
 export interface EngineEntriesView<CE, CD> extends EntriesView<CE, CD> {

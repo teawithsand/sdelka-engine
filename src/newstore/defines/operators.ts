@@ -1,16 +1,26 @@
 import { CollectionDerivedDataExtractor } from "./collection"
 import {
-	EntryCardDerivedDataExtractor,
-	EntryEngineDerivedDataExtractor,
-	HistoryEntryDerivedDataExtractor,
-} from "./entry"
+	DerivedHistoryDataExtractor,
+	DerivedEntryUserDataExtractor,
+	DerivedEntryEngineDataExtractor,
+} from "./derived"
 
-export interface EntryOperators<EngineEntryData, EntryData, HistoryData> {
-	engineDataExtractor: EntryEngineDerivedDataExtractor<EngineEntryData>
-	cardDataExtractor: EntryCardDerivedDataExtractor<EntryData>
-	historyDataExtractor: HistoryEntryDerivedDataExtractor<HistoryData>
+export interface EntryOperators<EngineEntryData, UserData, HistoryData> {
+	engineDataInitializer: (data: UserData) => EngineEntryData
+
+	// Engine data may be influenced by UserData
+	// but not vice versa
+	// this can be set to no-op in case no update is needed
+	engineDataUpdater: (
+		newEntryData: UserData,
+		engineData: EngineEntryData
+	) => EngineEntryData
+
+	engineDataExtractor: DerivedEntryEngineDataExtractor<EngineEntryData>
+	cardDataExtractor: DerivedEntryUserDataExtractor<UserData>
+	historyDataExtractor: DerivedHistoryDataExtractor<HistoryData>
 }
 
-export interface CollectionOperators<SD> {
-	collectionDataExtractor: CollectionDerivedDataExtractor<SD>
+export interface CollectionOperators<CollectionData> {
+	collectionDataExtractor: CollectionDerivedDataExtractor<CollectionData>
 }
