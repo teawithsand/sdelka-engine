@@ -1,10 +1,6 @@
 import produce, { Draft } from "immer"
-import { Clock } from "../../../engine"
-import {
-	TimestampMs,
-	throwExpression,
-	timestampToDate,
-} from "../../../util/stl"
+import { Clock } from "../../../pubutil"
+import { TimestampMs, throwExpression } from "../../../util/stl"
 import { EngineConfig, EngineSessionData } from "../../defines"
 import { EngineStorage } from "../../storage"
 
@@ -73,11 +69,12 @@ export class EngineSessionDataHelper {
 		})
 	}
 
-	public considerSwitchingDay = async (now: TimestampMs): Promise<boolean> => {
-		const switched = this.sessionData.dailyData.dayTimestamp !== this.clock.getDay(now)
-		if (
-			switched
-		) {
+	public considerSwitchingDay = async (
+		now: TimestampMs
+	): Promise<boolean> => {
+		const switched =
+			this.sessionData.dailyData.dayTimestamp !== this.clock.getDay(now)
+		if (switched) {
 			await this.initializeDailyData(now)
 		}
 

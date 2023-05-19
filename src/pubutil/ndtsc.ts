@@ -1,5 +1,4 @@
 import Dexie from "dexie"
-import { NDTSC_BASE } from "../util/sync"
 
 export type NDTSCData = {
 	scope: string
@@ -19,7 +18,7 @@ export class IndexedDBNdtscHelper {
 
 	getAndIncrement = async (): Promise<number> => {
 		const data = await this.table.get(this.scope)
-		const value = data?.value ?? NDTSC_BASE
+		const value = data?.value ?? -(2 ** 31)
 
 		await this.table.put({
 			scope: this.scope,

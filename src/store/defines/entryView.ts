@@ -19,7 +19,7 @@ export interface EngineEntriesView<CE, CD> extends EntriesView<CE, CD> {
 }
 
 export interface EntryAccess<CE, CD> {
-	readonly id: string
+	readonly entryId: string
 
 	getData: () => Promise<EntryEntity<CE, CD> | null>
 

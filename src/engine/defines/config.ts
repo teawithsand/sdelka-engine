@@ -44,7 +44,4 @@ export type EngineConfig = {
 
 	learningSteps: TimeMs[]
 	relearningSteps: TimeMs[]
-
-	maxNewCardsPerDay: number // TODO(teawithsand): make it nullable
-	maxLearnedReviewsPerDay: number | null
 }

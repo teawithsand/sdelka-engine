@@ -1,6 +1,5 @@
 import { MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
-import { generateUUID } from "../../util/stl"
-import { NDTSC_BASE } from "../../util/sync"
+import { generateUUID, throwExpression } from "../../util/stl"
 import { DB } from "../db"
 import {
 	CardCollectionAccess,
@@ -48,7 +47,7 @@ export class DBCollectionAccess<
 	> | null> => {
 		const data = await this.db.collections.get(this.collectionId)
 		if (!data) return null
-		
+
 		return {
 			id: this.collectionId,
 			collectionData: data.collectionData,
@@ -63,6 +62,7 @@ export class DBCollectionAccess<
 			await this.db.collections.put(collection)
 		})
 	}
+
 	updateEngineData = async (data: EngineCollectionData): Promise<void> => {
 		await this.db.transaction("rw", [this.db.collections], async () => {
 			const collection = await this.obtainData()
@@ -70,6 +70,7 @@ export class DBCollectionAccess<
 			await this.db.collections.put(collection)
 		})
 	}
+
 	delete = async (): Promise<void> => {
 		await this.db.transaction(
 			"rw",
@@ -125,7 +126,7 @@ export class DBCollectionAccess<
 								true
 							)
 							.last()
-					)?.ordinalNumber ?? NDTSC_BASE
+					)?.ordinalNumber ?? -(2 ** 31)
 
 				if (count > 200) {
 					const entry = await this.db.historyEntries

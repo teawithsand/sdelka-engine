@@ -1,14 +1,20 @@
+import { CollectionData } from "../../card"
 import { CollectionEntity } from "./collection"
 import { EngineEntriesView, EntriesView, MutableEntriesView } from "./entryView"
 
-export interface CardCollectionAccess<CLD, ESD, H> {
-	updateCollectionData: (data: CLD) => Promise<void>
-	updateEngineData: (data: ESD) => Promise<void>
+export interface CardCollectionAccess<CollectionData, EngineCollectionData, HistoryEntry> {
+	updateCollectionData: (data: CollectionData) => Promise<void>
+	updateEngineData: (data: EngineCollectionData) => Promise<void>
 	delete: () => Promise<void>
 
-	pushHistoryEntry: (entry: H) => Promise<void>
-	peekHistoryEntry: () => Promise<H | null>
+	pushHistoryEntry: (entry: HistoryEntry) => Promise<void>
+	peekHistoryEntry: () => Promise<HistoryEntry | null>
 	popHistoryEntry: () => Promise<void>
+
+	getData: () => Promise<CollectionEntity<
+		CollectionData,
+		EngineCollectionData
+	> | null | null>
 }
 
 export interface CardCollectionsStore<

@@ -6,7 +6,7 @@ import {
 	MIN_IDB_KEY,
 	idbComparator,
 } from "../../pubutil"
-import { generateUUID } from "../../util/stl"
+import { generateUUID, throwExpression } from "../../util/stl"
 import { DB } from "../db"
 import {
 	EngineEntriesView,
@@ -37,7 +37,14 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 
 	iterate = (): Cursor<EntryEntity<EngineEntryData, UserData>> => {
 		const query = () =>
-			this.db.entries.where("[collectionId+id]").equals(this.collectionId)
+			this.db.entries
+				.where("[collectionId+id]")
+				.between(
+					[this.collectionId, MIN_IDB_KEY],
+					[this.collectionId, MAX_IDB_KEY],
+					true,
+					true
+				)
 
 		return new AsyncCursor({
 			fetch: async (offset, limit) => {
@@ -101,9 +108,14 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 	}
 
 	getAccess = async (
-		id: string
+		entryId: string
 	): Promise<EntryAccess<EngineEntryData, UserData>> => {
-		return new DBEntryAccess(this.db, this.operators, id)
+		return new DBEntryAccess(
+			this.db,
+			this.operators,
+			entryId,
+			this.collectionId
+		)
 	}
 
 	getTopmostQueueEntry = async (

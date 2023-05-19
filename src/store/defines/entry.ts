@@ -32,11 +32,11 @@ export interface EntryEntity<E, C> {
 export type DeletedEntry = {
 	id: string
 
-	cardId: string
-	entryKey: string
+	entryId: string
+	entrySyncKey: string
 
 	collectionId: string
-	collectionKey: string
+	collectionSyncKey: string
 }
 export type DeletedEntryEntity = DeletedEntry
 

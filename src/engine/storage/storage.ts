@@ -28,7 +28,7 @@ export interface EngineStorage {
 
 	// HISTORY FUNCTIONS //
 
-	pushHistoryEntry: (data: EngineHistoryDataa) => Promise<void>
+	pushHistoryEntry: (data: EngineHistoryData) => Promise<void>
 	peekHistoryEntry: () => Promise<EngineHistoryData | null>
 	popHistoryEntry: () => Promise<void>
 }

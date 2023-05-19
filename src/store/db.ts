@@ -26,7 +26,7 @@ export class DB<
 		super(name)
 		this.version(1).stores({
 			entries:
-				"id, collectionId, [collectionId+syncKey], [collectionId+queue+priority+desiredPresentationTs]",
+				"id, collectionId, [collectionId+id], [collectionId+syncKey], [collectionId+queue+queuePriority]",
 			collections: "id, syncKey",
 			deletedEntries:
 				"id, entryKey, collectionKey, collectionId, entryId",

@@ -102,9 +102,8 @@ export class DBCollectionsStore<
 
 	getCollectionEntriesView = (
 		id: string
-	): (MutableEntriesView<EntryEngineData, EntryData> &
-		EngineEntriesView<EntryEngineData, EntryData>) => {
-
+	): MutableEntriesView<EntryEngineData, EntryData> &
+		EngineEntriesView<EntryEngineData, EntryData> => {
 		return new DBCollectionEntriesView(this.db, this.operators, id)
 	}
 
@@ -113,5 +112,14 @@ export class DBCollectionsStore<
 		id: string
 	): EntriesView<EntryEngineData, EntryData> => {
 		throw new Error("NIY")
+	}
+
+	clear = async () => {
+		await this.transaction(async () => {
+			await this.db.entries.clear()
+			await this.db.collections.clear()
+			await this.db.deletedEntries.clear()
+			await this.db.historyEntries.clear()
+		})
 	}
 }

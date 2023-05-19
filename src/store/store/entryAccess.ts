@@ -1,3 +1,4 @@
+import { generateUUID } from "../../util/stl"
 import { DB } from "../db"
 import { EntryAccess, EntryEntity, EntryOperators } from "../defines"
 
@@ -11,13 +12,15 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 			EntryData,
 			any
 		>,
-		public readonly id: string
+		public readonly entryId: string,
+		public readonly collectionId: string
 	) {}
 
 	updateEngineData = async (engineData: EntryEngineData): Promise<void> => {
 		this.db.transaction("rw", [this.db.entries], async () => {
-			const data = await this.db.entries.get(this.id)
-			if (!data) throw new Error(`Entry with id ${this.id} was deleted`)
+			const data = await this.db.entries.get(this.entryId)
+			if (!data)
+				throw new Error(`Entry with id ${this.entryId} was deleted`)
 
 			const extracted = this.operators.engineDataExtractor(engineData)
 			const newData: typeof data = {
@@ -37,8 +40,9 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 
 	updateCardData = async (cardData: EntryData): Promise<void> => {
 		this.db.transaction("rw", [this.db.entries], async () => {
-			const data = await this.db.entries.get(this.id)
-			if (!data) throw new Error(`Entry with id ${this.id} was deleted`)
+			const data = await this.db.entries.get(this.entryId)
+			if (!data)
+				throw new Error(`Entry with id ${this.entryId} was deleted`)
 
 			const extracted = this.operators.cardDataExtractor(cardData)
 			const newData: typeof data = {
@@ -63,7 +67,7 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 		EntryEngineData,
 		EntryData
 	> | null> => {
-		const value = await this.db.entries.get(this.id)
+		const value = await this.db.entries.get(this.entryId)
 		if (!value) return null
 
 		return {
@@ -74,6 +78,28 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 	}
 
 	delete = async (): Promise<void> => {
-		await this.db.entries.delete(this.id)
+		await this.db.transaction(
+			"rw",
+			[this.db.entries, this.db.deletedEntries, this.db.collections],
+			async () => {
+				const collection = await this.db.collections.get(
+					this.collectionId
+				)
+				if (!collection) return
+
+				const entry = await this.db.entries.get(this.entryId)
+				if (!entry) return
+
+				await this.db.entries.delete(this.entryId)
+
+				await this.db.deletedEntries.put({
+					id: generateUUID(),
+					entryId: entry.id,
+					collectionId: this.collectionId,
+					collectionSyncKey: collection.syncKey,
+					entrySyncKey: entry.syncKey,
+				})
+			}
+		)
 	}
 }

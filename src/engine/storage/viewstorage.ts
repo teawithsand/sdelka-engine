@@ -1,5 +1,6 @@
 import produce from "immer"
 import {
+	CardCollectionAccess,
 	DBCollectionAccess,
 	DBCollectionsStore,
 	EngineEntriesView,
@@ -12,6 +13,7 @@ import {
 	EngineHistoryData,
 } from "../defines"
 import { EngineStorage } from "./storage"
+import { throwExpression } from "../../util/stl"
 
 export class DBEngineStorage implements EngineStorage {
 	constructor(
@@ -23,7 +25,7 @@ export class DBEngineStorage implements EngineStorage {
 			EngineHistoryData
 		>,
 		private readonly view: EngineEntriesView<EngineEntryData, any>,
-		private readonly collectionAccess: DBCollectionAccess<
+		private readonly collectionAccess: CardCollectionAccess<
 			any,
 			EngineSessionData,
 			EngineHistoryData
@@ -45,6 +47,7 @@ export class DBEngineStorage implements EngineStorage {
 		return await this.transaction(async () => {
 			const id = await this.view.getTopmostQueueEntry(queues)
 			if (id === null) return null
+
 			const data = (await this.view.getData(id))?.engineData
 			if (!data) return null
 

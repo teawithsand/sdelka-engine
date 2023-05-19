@@ -22,6 +22,8 @@ export interface Cursor<T> {
 	 * Returns how many entries are there left to be iterated over by this cursor.
 	 */
 	left: () => Promise<number>
+
+	toArray: () => Promise<T[]>
 }
 
 export class AsyncCursor<T> implements Cursor<T> {
@@ -36,6 +38,20 @@ export class AsyncCursor<T> implements Cursor<T> {
 		},
 		private readonly batchSize = 30
 	) {}
+	
+	toArray = async (): Promise<T[]> => {
+		let res: T[] = []
+		if (this.currentValue) {
+			res.push(this.currentValue)
+		}
+		while (await this.next()) {
+			if (this.currentValue) {
+				res.push(this.currentValue)
+			}
+		}
+
+		return res
+	}
 
 	position = (): number => {
 		return this.offset
@@ -76,6 +92,6 @@ export class AsyncCursor<T> implements Cursor<T> {
 
 	left = async (): Promise<number> => {
 		// TODO(teawithsand): fix all off-by-one mistakes in this line
-		return await this.adapter.count() - this.offset + 1
+		return (await this.adapter.count()) - this.offset + 1
 	}
 }
