@@ -77,3 +77,7 @@ export const throwExpression = (e: any): never => {
 export const throwExpressionLazy = (e: () => any): never => {
 	throw e()
 }
+
+export const filterNotNull = <T>(arr: (T | null)[]): T[] => {
+	return arr.filter((c) => c !== null) as T[]
+}
