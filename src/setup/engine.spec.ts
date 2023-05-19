@@ -10,7 +10,7 @@ import { TimestampMs, generateUUID, throwExpression } from "../util/stl"
 import { App, AppEngineOpts, initializeApp } from "./app"
 import { DefaultEngineConfig } from "./config"
 
-describe("Master store", () => {
+describe("Master store / Master Engine", () => {
 	let app: App
 
 	jest.setTimeout(100000000) // so debugger works fine; should be removed in future
@@ -209,14 +209,14 @@ describe("Master store", () => {
 		const card = await engine.getCurrentEntry()
 		expect(card).not.toBe(null)
 
-		const entryId =
+		const currentEntryData =
 			(await engine.getCurrentEntry()) ??
 			throwExpression(new Error("No current entry"))
 		await engine.answer(EngineAnswer.AGAIN)
 		await engine.getCurrentEntry()
 
 		const data =
-			(await engine.getEntryData(entryId)) ??
+			(await engine.getEntryData(currentEntryData.id)) ??
 			throwExpression(new Error("No current entry data"))
 
 		if (data.type !== EngineEntryDataType.LEARNING) {
@@ -235,7 +235,7 @@ describe("Master store", () => {
 			(await engine.getCurrentEntry()) ??
 			throwExpression(new Error("No next current entry"))
 
-		expect(entryId).toEqual(nextEntryId)
+		expect(currentEntryData.id).toEqual(nextEntryId.id)
 	})
 
 	it("moves all cards to learned after enough presses of good button + processes learned and new cards on next day", async () => {
@@ -244,7 +244,7 @@ describe("Master store", () => {
 		const config = produce(DefaultEngineConfig, (draft) => {
 			draft.initialDailyConfig.newCardLimit = 30
 		})
-		const { engine, getEntryDatas } = await initForEngine({
+		const { engine } = await initForEngine({
 			cardCount: config.initialDailyConfig.newCardLimit + 10,
 			config: config,
 			appEngineOpts: {
@@ -255,15 +255,15 @@ describe("Master store", () => {
 		const limit = 1000
 		const entriesIds = new Set<string>()
 		for (var i = 0; i < limit; i++) {
-			const entryId = await engine.getCurrentEntry()
-			if (!entryId) {
+			const currentEntryData = await engine.getCurrentEntry()
+			if (!currentEntryData) {
 				expect(entriesIds.size).toEqual(
 					DefaultEngineConfig.initialDailyConfig.newCardLimit
 				)
 				break
 			}
 
-			entriesIds.add(entryId)
+			entriesIds.add(currentEntryData.id)
 			await engine.answer(EngineAnswer.GOOD)
 		}
 
@@ -290,5 +290,23 @@ describe("Master store", () => {
 			expect(stats.newCardsLeft).toEqual(10)
 			expect(stats.learnedLeft).toEqual(30)
 		}
+
+		{
+			const entry =
+				(await engine.getCurrentEntry()) ??
+				throwExpression(new Error(`No current entry`))
+
+			expect(entry.type).toEqual(EngineEntryDataType.LEARNED)
+
+			await engine.answer(EngineAnswer.GOOD)
+
+			const stats = await engine.getQueuesStats()
+			expect(stats.learningLeft).toEqual(0)
+			expect(stats.relearningLeft).toEqual(0)
+			expect(stats.newCardsLeft).toEqual(10)
+			expect(stats.learnedLeft).toEqual(29)
+		}
 	})
+
+	// TODO(teawithsand): tests for undo
 })

@@ -1,7 +1,12 @@
-import { DailyEntryStats, EngineAnswer, EngineDailyConfig, EngineEntryData } from "../defines"
+import { DailyEntryStats, EngineAnswer, EngineDailyConfig, EngineEntryData, EngineEntryDataType } from "."
+
+export interface EngineCurrentEntryData {
+	id: string
+	type: EngineEntryDataType
+}
 
 export interface Engine {
-	getCurrentEntry: () => Promise<string | null>
+	getCurrentEntry: () => Promise<EngineCurrentEntryData | null>
 	answer: (answer: EngineAnswer) => Promise<void>
 	undo: () => Promise<void>
 

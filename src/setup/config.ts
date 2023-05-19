@@ -1,8 +1,10 @@
-import { EngineConfig } from "../engine";
+import { EngineConfig, NotDueCardPickStrategy } from "../engine";
 
 export const DefaultEngineConfig: Readonly<EngineConfig> = {
     skipLearningInterval: 1000 * 60 * 60 * 24 * 4,
     skipLearningEaseFactor: 2,
+
+    notDueCardPickStrategy: NotDueCardPickStrategy.LEARNED_FIRST,
 
     initEaseFactor: 1.4,
     minEaseFactor: 1.2,

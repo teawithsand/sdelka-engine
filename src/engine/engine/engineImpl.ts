@@ -1,4 +1,4 @@
-import { Clock, MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
+import { Clock, MAX_IDB_KEY, MIN_IDB_KEY, filterNotNull } from "../../pubutil"
 import { TimestampMs } from "../../util/stl"
 import {
 	DailyEntryStats as EngineQueuesStats,
@@ -8,9 +8,11 @@ import {
 	EngineEntryData,
 	EngineEntryDataType,
 	EngineQueueType,
+	NotDueCardPickStrategy,
+	EngineEntryDataEntity,
 } from "../defines"
 import { EngineStorage } from "../storage"
-import { Engine } from "./engine"
+import { Engine, EngineCurrentEntryData } from "../defines/engine"
 import {
 	EngineEntryTransition,
 	EngineEntryTransitionImpl,
@@ -40,7 +42,7 @@ export class EngineImpl implements Engine {
 		new EngineEntryTransitionImpl(this.config)
 
 	private isCurrentCardCacheValid: boolean = false
-	private currentCardCache: string | null = null
+	private currentCardCache: EngineCurrentEntryData | null = null
 
 	private prologue = async () => {
 		const now = this.clock.getNow()
@@ -58,101 +60,142 @@ export class EngineImpl implements Engine {
 	): Promise<void> => {
 		const now = candidateNow ?? this.clock.getNow()
 
-		const getCandidateId = async () => {
-			const shouldPollNew =
-				this.sessionDataHelper.dailyData.processedNewCount <
-				this.sessionDataHelper.dailyConfig.newCardLimit
+		const getCandidateId =
+			async (): Promise<EngineEntryDataEntity | null> => {
+				const shouldPollNew =
+					this.sessionDataHelper.dailyData.processedNewCount <
+					this.sessionDataHelper.dailyConfig.newCardLimit
 
-			const shouldPollLearned =
-				this.sessionDataHelper.dailyConfig.learnedCountLimit === null ||
-				this.sessionDataHelper.dailyData.processedLearnedCount <
-					this.sessionDataHelper.dailyConfig.learnedCountLimit
+				const shouldPollLearned =
+					this.sessionDataHelper.dailyConfig.learnedCountLimit ===
+						null ||
+					this.sessionDataHelper.dailyData.processedLearnedCount <
+						this.sessionDataHelper.dailyConfig.learnedCountLimit
 
-			let learnedCandidate = shouldPollLearned
-				? await this.storage.getTopEntryOnQueue([
-						EngineQueueType.LEARNED,
-				  ])
-				: null
+				let learnedCandidate = shouldPollLearned
+					? await this.storage.getTopEntryOnQueue([
+							EngineQueueType.LEARNED,
+					  ])
+					: null
 
-			let newCandidate = shouldPollNew
-				? await this.storage.getTopEntryOnQueue([EngineQueueType.NEW])
-				: null
+				let newCandidate = shouldPollNew
+					? await this.storage.getTopEntryOnQueue([
+							EngineQueueType.NEW,
+					  ])
+					: null
 
-			let processingCandidate = await this.storage.getTopEntryOnQueue([
-				EngineQueueType.LEARNING,
-				EngineQueueType.RELEARNING,
-			])
-
-			const today = this.sessionDataHelper.dailyData.dayTimestamp
-
-			if (
-				newCandidate &&
-				newCandidate.data.type !== EngineEntryDataType.NEW
-			) {
-				throw new Error(
-					`new card candidate is not in NEW state; assertion filed`
+				let processingCandidate = await this.storage.getTopEntryOnQueue(
+					[EngineQueueType.LEARNING, EngineQueueType.RELEARNING]
 				)
-			}
 
-			if (learnedCandidate) {
+				const today = this.sessionDataHelper.dailyData.dayTimestamp
+
 				if (
-					learnedCandidate.data.type !== EngineEntryDataType.LEARNED
+					newCandidate &&
+					newCandidate.data.type !== EngineEntryDataType.NEW
 				) {
 					throw new Error(
-						`learnedCandidate is not in LEARNED state; assertion filed`
+						`new card candidate is not in NEW state; assertion filed`
 					)
 				}
 
-				const dayDeadline =
-					today +
-					this.sessionDataHelper.dailyConfig
-						.learnedCardDaysFutureAllowed
-				if (
-					this.clock.getDay(
-						learnedCandidate.data.desiredPresentationTimestamp
-					) > dayDeadline
-				) {
-					learnedCandidate = null
-				}
-			}
+				if (learnedCandidate) {
+					if (
+						learnedCandidate.data.type !==
+						EngineEntryDataType.LEARNED
+					) {
+						throw new Error(
+							`learnedCandidate is not in LEARNED state; assertion filed`
+						)
+					}
 
-			if (processingCandidate) {
+					const dayDeadline =
+						today +
+						this.sessionDataHelper.dailyConfig
+							.learnedCardDaysFutureAllowed
+					if (
+						this.clock.getDay(
+							learnedCandidate.data.desiredPresentationTimestamp
+						) > dayDeadline
+					) {
+						learnedCandidate = null
+					}
+				}
+
+				if (processingCandidate) {
+					if (
+						processingCandidate.data.type !==
+							EngineEntryDataType.LEARNING &&
+						processingCandidate.data.type !==
+							EngineEntryDataType.RELEARNING
+					) {
+						throw new Error(
+							`processingCandidate is neither LEARNING or RELEARNING; assertion filed`
+						)
+					}
+
+					if (
+						processingCandidate.data.desiredPresentationTimestamp <=
+						now
+					) {
+						return processingCandidate
+					}
+				}
+
+				const candidates: EngineEntryDataEntity[] = filterNotNull([
+					learnedCandidate,
+					newCandidate,
+					processingCandidate,
+				])
+
+				if (!candidates.length) return null
+
 				if (
-					processingCandidate.data.type !==
-						EngineEntryDataType.LEARNING &&
-					processingCandidate.data.type !==
-						EngineEntryDataType.RELEARNING
+					this.config.notDueCardPickStrategy ===
+					NotDueCardPickStrategy.NEW_FIRST
 				) {
-					throw new Error(
-						`processingCandidate is neither LEARNING or RELEARNING; assertion filed`
+					const preferred = candidates.find(
+						(c) => c.data.type === EngineEntryDataType.NEW
 					)
-				}
+					if (preferred) return preferred
 
-				if (
-					processingCandidate.data.desiredPresentationTimestamp <= now
+					return candidates[0]
+				} else if (
+					this.config.notDueCardPickStrategy ===
+					NotDueCardPickStrategy.LEARNED_FIRST
 				) {
-					return processingCandidate.id
+					const preferred = candidates.find(
+						(c) => c.data.type === EngineEntryDataType.LEARNED
+					)
+					if (preferred) return preferred
+
+					return candidates[0]
+				} else if (
+					this.config.notDueCardPickStrategy ===
+					NotDueCardPickStrategy.RANDOM
+				) {
+					const choices = candidates.filter(
+						(c) =>
+							c.data.type === EngineEntryDataType.LEARNED ||
+							c.data.type === EngineEntryDataType.NEW
+					)
+					if (!choices.length) return candidates[0]
+
+					return choices[Math.floor(Math.random() * choices.length)]
 				}
+
+				return null
 			}
 
-			// learned first for now
-			// TODO: teawithsand - here add random + learned/learning first
-			if (learnedCandidate) {
-				return learnedCandidate.id
+		const candidate = await getCandidateId()
+		if (!candidate) {
+			this.currentCardCache = null
+		} else {
+			this.currentCardCache = {
+				id: candidate.id,
+				type: candidate.data.type,
 			}
-
-			if (newCandidate) {
-				return newCandidate.id
-			}
-
-			if (processingCandidate) {
-				return processingCandidate.id
-			}
-
-			return null
 		}
-
-		this.currentCardCache = await getCandidateId()
 		this.isCurrentCardCacheValid = true
 	}
 
@@ -211,7 +254,7 @@ export class EngineImpl implements Engine {
 		}
 	}
 
-	getCurrentEntry = async (): Promise<string | null> => {
+	getCurrentEntry = async (): Promise<EngineCurrentEntryData | null> => {
 		const { now } = await this.prologue()
 
 		if (!this.isCurrentCardCacheValid) {
@@ -228,7 +271,7 @@ export class EngineImpl implements Engine {
 			await this.invalidateCurrentCardCache(now)
 		}
 
-		const currentCardId = this.currentCardCache
+		const currentCardId = this.currentCardCache?.id ?? null
 
 		if (currentCardId === null) {
 			throw new Error(`Can't answer if there is no card`)
@@ -384,8 +427,7 @@ export class EngineImpl implements Engine {
 
 		const endTs = this.clock.getEndDayTimestamp(
 			this.sessionDataHelper.dailyData.dayTimestamp +
-				this.sessionDataHelper.dailyConfig
-					.learnedCardDaysFutureAllowed
+				this.sessionDataHelper.dailyConfig.learnedCardDaysFutureAllowed
 		)
 
 		const learnedLeft = await this.storage.getQueueLengthInRange(
