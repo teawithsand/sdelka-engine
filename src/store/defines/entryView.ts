@@ -8,14 +8,18 @@ export interface EntriesView<CE, CD> {
 }
 
 export interface MutableEntriesView<CE, CD> extends EntriesView<CE, CD> {
-	addCard: (cardData: CD) => Promise<void>
+	addCard: (cardData: CD) => Promise<EntryEntity<CE, CD>>
 }
 
 export interface EngineEntriesView<CE, CD> extends EntriesView<CE, CD> {
 	getTopmostQueueEntry: (queues: IDBComparable[]) => Promise<string | null>
-	getQueueLength: (queue: IDBComparable) => Promise<number>
-	getQueueLengthUntil: (queue: IDBComparable, element: IDBComparable) => Promise<number>
-	getQueueLengthAfter: (queue: IDBComparable, element: IDBComparable) => Promise<number>
+	getQueueLengthInRange: (
+		queue: IDBComparable,
+		start: IDBComparable,
+		end: IDBComparable,
+		startIncl: boolean,
+		endIncl: boolean
+	) => Promise<number>
 }
 
 export interface EntryAccess<CE, CD> {

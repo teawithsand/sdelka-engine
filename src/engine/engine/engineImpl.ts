@@ -1,6 +1,7 @@
-import { Clock } from "../../pubutil"
+import { Clock, MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
 import { TimestampMs } from "../../util/stl"
 import {
+	DailyEntryStats as EngineQueuesStats,
 	EngineAnswer,
 	EngineConfig,
 	EngineDailyConfig,
@@ -10,7 +11,11 @@ import {
 } from "../defines"
 import { EngineStorage } from "../storage"
 import { Engine } from "./engine"
-import { EngineEntryTransition, EngineSessionDataHelper } from "./helper"
+import {
+	EngineEntryTransition,
+	EngineEntryTransitionImpl,
+	EngineSessionDataHelper,
+} from "./helper"
 
 enum DataTransitionSource {
 	EXTERNAL = 1,
@@ -31,7 +36,8 @@ export class EngineImpl implements Engine {
 		this.config
 	)
 
-	private readonly transition!: EngineEntryTransition
+	private readonly transition: EngineEntryTransition =
+		new EngineEntryTransitionImpl(this.config)
 
 	private isCurrentCardCacheValid: boolean = false
 	private currentCardCache: string | null = null
@@ -123,14 +129,14 @@ export class EngineImpl implements Engine {
 				}
 
 				if (
-					processingCandidate.data.desiredPresentationTimestamp < now
+					processingCandidate.data.desiredPresentationTimestamp <= now
 				) {
 					return processingCandidate.id
 				}
 			}
 
 			// learned first for now
-			// TODO: teaiwthsand - here add random/
+			// TODO: teawithsand - here add random + learned/learning first
 			if (learnedCandidate) {
 				return learnedCandidate.id
 			}
@@ -205,7 +211,7 @@ export class EngineImpl implements Engine {
 		}
 	}
 
-	getCurrentCard = async (): Promise<string | null> => {
+	getCurrentEntry = async (): Promise<string | null> => {
 		const { now } = await this.prologue()
 
 		if (!this.isCurrentCardCacheValid) {
@@ -315,6 +321,12 @@ export class EngineImpl implements Engine {
 		this.isCurrentCardCacheValid = false
 	}
 
+	getEntryData = async (id: string): Promise<EngineEntryData | null> => {
+		await this.prologue()
+
+		return (await this.storage.getEngineData(id))?.data ?? null
+	}
+
 	setEntryData = async (id: string, data: EngineEntryData): Promise<void> => {
 		await this.prologue()
 
@@ -334,5 +346,65 @@ export class EngineImpl implements Engine {
 		})
 
 		this.isCurrentCardCacheValid = false
+	}
+
+	getQueuesStats = async (): Promise<EngineQueuesStats> => {
+		await this.prologue()
+
+		const newCardsLeft = Math.min(
+			Math.max(
+				0,
+				this.sessionDataHelper.dailyConfig.newCardLimit -
+					this.sessionDataHelper.dailyData.processedNewCount
+			),
+			await this.storage.getQueueLengthInRange(
+				EngineQueueType.NEW,
+				MIN_IDB_KEY,
+				MAX_IDB_KEY,
+				true,
+				true
+			)
+		)
+
+		const learningLeft = await this.storage.getQueueLengthInRange(
+			EngineQueueType.LEARNING,
+			MIN_IDB_KEY,
+			MAX_IDB_KEY,
+			true,
+			true
+		)
+
+		const relearningLeft = await this.storage.getQueueLengthInRange(
+			EngineQueueType.RELEARNING,
+			MIN_IDB_KEY,
+			MAX_IDB_KEY,
+			true,
+			true
+		)
+
+		const endTs = this.clock.getEndDayTimestamp(
+			this.sessionDataHelper.dailyData.dayTimestamp +
+				this.sessionDataHelper.dailyConfig
+					.learnedCardDaysFutureAllowed
+		)
+
+		const learnedLeft = await this.storage.getQueueLengthInRange(
+			EngineQueueType.LEARNED,
+			MIN_IDB_KEY,
+			endTs,
+			true,
+			true
+		)
+
+		return {
+			newCardsLeft,
+			learnedLeft: Math.min(
+				this.sessionDataHelper.dailyConfig.learnedCountLimit ??
+					Infinity,
+				learnedLeft
+			),
+			relearningLeft,
+			learningLeft,
+		}
 	}
 }

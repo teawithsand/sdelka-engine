@@ -1,19 +1,17 @@
 import produce from "immer"
-import {
-	CardCollectionAccess,
-	DBCollectionAccess,
-	DBCollectionsStore,
-	EngineEntriesView,
-} from "../../store"
 import { IDBComparable } from "../../pubutil"
 import {
-	EngineSessionData,
-	EngineEntryDataEntity,
+	CardCollectionAccess,
+	DBCollectionsStore,
+	EngineEntriesView
+} from "../../store"
+import {
 	EngineEntryData,
+	EngineEntryDataEntity,
 	EngineHistoryData,
+	EngineSessionData,
 } from "../defines"
 import { EngineStorage } from "./storage"
-import { throwExpression } from "../../util/stl"
 
 export class DBEngineStorage implements EngineStorage {
 	constructor(
@@ -57,6 +55,8 @@ export class DBEngineStorage implements EngineStorage {
 			}
 		})
 	}
+
+	getQueueLengthInRange = this.view.getQueueLengthInRange
 
 	setEngineData = async (
 		id: string,

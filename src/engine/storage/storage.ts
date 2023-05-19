@@ -23,6 +23,13 @@ export interface EngineStorage {
 	getTopEntryOnQueue: (
 		queue: IDBComparable[]
 	) => Promise<EngineEntryDataEntity | null>
+	getQueueLengthInRange: (
+		queue: IDBComparable,
+		start: IDBComparable,
+		end: IDBComparable,
+		startIncl: boolean,
+		endIncl: boolean
+	) => Promise<number>
 	setEngineData: (id: string, data: EngineEntryData) => Promise<void>
 	getEngineData: (id: string) => Promise<EngineEntryDataEntity | null>
 

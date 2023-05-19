@@ -6,7 +6,7 @@ import {
 	MIN_IDB_KEY,
 	idbComparator,
 } from "../../pubutil"
-import { generateUUID, throwExpression } from "../../util/stl"
+import { generateUUID } from "../../util/stl"
 import { DB } from "../db"
 import {
 	EngineEntriesView,
@@ -62,7 +62,9 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 		})
 	}
 
-	addCard = async (userData: UserData): Promise<void> => {
+	addCard = async (
+		userData: UserData
+	): Promise<EntryEntity<EngineEntryData, UserData>> => {
 		const extractedCard = this.operators.cardDataExtractor(userData)
 		const engineData = this.operators.engineDataInitializer(userData)
 		const extractedEngine = this.operators.engineDataExtractor(engineData)
@@ -99,6 +101,12 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 				await this.db.entries.put(entry)
 			}
 		)
+
+		return {
+			id: entry.id,
+			engineData: entry.engineData,
+			userData: entry.userData,
+		}
 	}
 
 	getData = async (
@@ -144,44 +152,20 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 		return results[0].id
 	}
 
-	getQueueLengthUntil = async (
+	getQueueLengthInRange = async (
 		queue: IDBComparable,
-		element: IDBComparable
+		from: IDBComparable,
+		to: IDBComparable,
+		startIncl: boolean,
+		endIncl: boolean
 	): Promise<number> => {
 		return await this.db.entries
 			.where("[collectionId+queue+queuePriority]")
 			.between(
-				[this.collectionId, queue, MIN_IDB_KEY],
-				[this.collectionId, queue, element],
-				true,
-				false
-			)
-			.count()
-	}
-
-	getQueueLengthAfter = async (
-		queue: IDBComparable,
-		element: IDBComparable
-	): Promise<number> => {
-		return await this.db.entries
-			.where("[collectionId+queue+queuePriority]")
-			.between(
-				[this.collectionId, queue, element],
-				[this.collectionId, queue, MAX_IDB_KEY],
-				false,
-				true
-			)
-			.count()
-	}
-
-	getQueueLength = async (queue: IDBComparable): Promise<number> => {
-		return await this.db.entries
-			.where("[collectionId+queue+queuePriority]")
-			.between(
-				[this.collectionId, queue, MIN_IDB_KEY],
-				[this.collectionId, queue, MAX_IDB_KEY],
-				true,
-				true
+				[this.collectionId, queue, from],
+				[this.collectionId, queue, to],
+				startIncl,
+				endIncl
 			)
 			.count()
 	}
