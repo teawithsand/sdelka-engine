@@ -1,57 +1,42 @@
+import { UserCollectionData } from "../../card"
+import { EngineCollectionData, EngineHistoryData } from "../../engine"
 import { CollectionEntity } from "./collection"
 import { EngineEntriesView, EntriesView, MutableEntriesView } from "./entryView"
 
-export interface CardCollectionAccess<
-	CollectionData,
-	EngineCollectionData,
-	HistoryEntry
-> {
-	updateCollectionData: (data: CollectionData) => Promise<void>
+export interface CardCollectionAccess {
+	updateCollectionData: (data: UserCollectionData) => Promise<void>
 	updateEngineData: (data: EngineCollectionData) => Promise<void>
 	delete: () => Promise<void>
 
-	pushHistoryEntry: (entry: HistoryEntry) => Promise<void>
-	peekHistoryEntry: () => Promise<HistoryEntry | null>
+	pushHistoryEntry: (entry: EngineHistoryData) => Promise<void>
+	peekHistoryEntry: () => Promise<EngineHistoryData | null>
 	popHistoryEntry: () => Promise<void>
 
-	getData: () => Promise<CollectionEntity<
-		CollectionData,
-		EngineCollectionData
-	> | null | null>
+	getData: () => Promise<CollectionEntity | null>
 }
 
-export interface CardCollectionsStore<
-	CardEngineData,
-	CardData,
-	CollectionData,
-	EngineCollectionData,
-	EngineHistoryData
-> {
+export interface CardCollectionsStore {
 	transaction: <R>(cb: () => Promise<R>) => Promise<R>
 
 	getCollections: () => Promise<
-		CollectionEntity<CollectionData, EngineCollectionData>[]
+		CollectionEntity[]
 	>
 	createCollection: (
-		collectionData: CollectionData
-	) => Promise<CollectionEntity<CollectionData, EngineCollectionData>>
+		collectionData: UserCollectionData
+	) => Promise<CollectionEntity>
 
 	getAccess: (
 		id: string
 	) => Promise<
-		CardCollectionAccess<
-			CollectionData,
-			EngineCollectionData,
-			EngineHistoryData
-		>
+		CardCollectionAccess
 	>
 
 	getCollectionEntriesView: (
 		id: string
-	) => MutableEntriesView<CardEngineData, CardData> &
-		EngineEntriesView<CardEngineData, CardData>
+	) => MutableEntriesView &
+		EngineEntriesView
 
 	getCollectionSyncEntriesView: (
 		id: string
-	) => EntriesView<CardEngineData, CardData>
+	) => EntriesView
 }

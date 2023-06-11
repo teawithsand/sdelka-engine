@@ -1,24 +1,15 @@
-import produce from "immer"
 import {
-	UserCollectionData,
 	UserCollectionDataExtractor,
-	UserEntryData,
-	UserEntryDataExtractor,
+	UserEntryDataExtractor
 } from "../card"
 import {
 	EngineDataExtractor,
-	EngineEntryData,
-	EngineEntryDataType,
-	EngineHistoryData,
+	EngineEntryDataType
 } from "../engine"
 import { CollectionOperators, EntryOperators } from "../store"
 import { getNowTimestamp } from "../util/stl"
 
-export const EntryOperatorsImpl: EntryOperators<
-	EngineEntryData,
-	UserEntryData,
-	EngineHistoryData
-> = {
+export const EntryOperatorsImpl: EntryOperators = {
 	cardDataExtractor: UserEntryDataExtractor,
 	engineDataExtractor: EngineDataExtractor,
 	engineDataInitializer: (data) => ({
@@ -42,6 +33,6 @@ export const EntryOperatorsImpl: EntryOperators<
 	},
 }
 
-export const CollectionOperatorsImpl: CollectionOperators<UserCollectionData> = {
+export const CollectionOperatorsImpl: CollectionOperators = {
 	collectionDataExtractor: UserCollectionDataExtractor,
 }

@@ -1,3 +1,5 @@
+import { UserCollectionData } from "../../card"
+import { EngineCollectionData, EngineHistoryData } from "../../engine"
 import { MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
 import { generateUUID } from "../../util/stl"
 import { DB } from "../db"
@@ -7,27 +9,12 @@ import {
 	EntryOperators,
 } from "../defines"
 
-export class DBCollectionAccess<
-	CollectionData,
-	EngineCollectionData,
-	EngineHistoryData
-> implements
-	CardCollectionAccess<
-		CollectionData,
-		EngineCollectionData,
-		EngineHistoryData
-	>
+export class DBCollectionAccess implements CardCollectionAccess
 {
 	constructor(
-		private readonly db: DB<
-			any,
-			any,
-			CollectionData,
-			EngineCollectionData,
-			EngineHistoryData
-		>,
+		private readonly db: DB,
 		public readonly collectionId: string,
-		private readonly operators: EntryOperators<any, any, EngineHistoryData>
+		private readonly operators: EntryOperators
 	) { }
 
 	private obtainData = async () => {
@@ -41,10 +28,7 @@ export class DBCollectionAccess<
 		return data
 	}
 
-	public getData = async (): Promise<CollectionEntity<
-		any,
-		EngineCollectionData
-	> | null> => {
+	public getData = async (): Promise<CollectionEntity | null> => {
 		const data = await this.db.collections.get(this.collectionId)
 		if (!data) return null
 
@@ -55,7 +39,7 @@ export class DBCollectionAccess<
 		}
 	}
 
-	updateCollectionData = async (data: CollectionData): Promise<void> => {
+	updateCollectionData = async (data: UserCollectionData): Promise<void> => {
 		await this.db.transaction("rw", [this.db.collections], async () => {
 			const collection = await this.obtainData()
 			collection.collectionData = data

@@ -1,17 +1,19 @@
+import { UserEntryData } from "../../card"
+import { EngineEntryData } from "../../engine"
 import { Cursor, IDBComparable } from "../../pubutil"
 import { EntryEntity } from "./entry"
 
-export interface EntriesView<CE, CD> {
-	iterate: () => Cursor<EntryEntity<CE, CD>>
-	getData: (id: string) => Promise<EntryEntity<CE, CD> | null>
-	getAccess: (id: string) => Promise<EntryAccess<CE, CD> | null>
+export interface EntriesView {
+	iterate: () => Cursor<EntryEntity>
+	getData: (id: string) => Promise<EntryEntity | null>
+	getAccess: (id: string) => Promise<EntryAccess | null>
 }
 
-export interface MutableEntriesView<CE, CD> extends EntriesView<CE, CD> {
-	addCard: (cardData: CD) => Promise<EntryEntity<CE, CD>>
+export interface MutableEntriesView extends EntriesView {
+	addCard: (userData: UserEntryData) => Promise<EntryEntity>
 }
 
-export interface EngineEntriesView<CE, CD> extends EntriesView<CE, CD> {
+export interface EngineEntriesView extends EntriesView {
 	getTopmostQueueEntry: (queues: IDBComparable[]) => Promise<string | null>
 	getQueueLengthInRange: (
 		queue: IDBComparable,
@@ -22,12 +24,12 @@ export interface EngineEntriesView<CE, CD> extends EntriesView<CE, CD> {
 	) => Promise<number>
 }
 
-export interface EntryAccess<CE, CD> {
+export interface EntryAccess {
 	readonly entryId: string
 
-	getData: () => Promise<EntryEntity<CE, CD> | null>
+	getData: () => Promise<EntryEntity | null>
 
-	updateEngineData: (engineData: CE) => Promise<void>
-	updateCardData: (cardData: CD) => Promise<void>
+	updateEngineData: (engineData: EngineEntryData) => Promise<void>
+	updateUserData: (userData: UserEntryData) => Promise<void>
 	delete: () => Promise<void>
 }

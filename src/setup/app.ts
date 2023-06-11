@@ -1,10 +1,6 @@
-import { UserCollectionData, UserEntryData } from "../card"
 import {
 	EngineConfig,
-	EngineEntryData,
-	EngineHistoryData,
-	EngineImpl,
-	EngineCollectionData,
+	EngineImpl
 } from "../engine"
 import { DBEngineStorage } from "../engine/storage/viewstorage"
 import { Clock, SystemClock } from "../pubutil"
@@ -16,20 +12,8 @@ export interface AppEngineOpts {
 }
 
 export interface App {
-	db: DB<
-		EngineEntryData,
-		UserEntryData,
-		UserCollectionData,
-		EngineCollectionData,
-		EngineHistoryData
-	>
-	store: DBCollectionsStore<
-		EngineEntryData,
-		UserEntryData,
-		UserCollectionData,
-		EngineCollectionData,
-		EngineHistoryData
-	>
+	db: DB
+	store: DBCollectionsStore
 
 	getEngine: (
 		collectionId: string,
@@ -45,13 +29,7 @@ export interface AppInitOptions {
 export const initializeApp = async (
 	appOptions?: AppInitOptions
 ): Promise<App> => {
-	const db = new DB<
-		EngineEntryData,
-		UserEntryData,
-		UserCollectionData,
-		EngineCollectionData,
-		EngineHistoryData
-	>(appOptions?.dbName ?? "sdelka-default-db")
+	const db = new DB(appOptions?.dbName ?? "sdelka-default-db")
 
 	const store = new DBCollectionsStore(
 		db,

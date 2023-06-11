@@ -1,5 +1,5 @@
-import { DerivedEntryEngineDataExtractor } from "../../store"
-import { EngineEntryData, EngineEntryDataType } from "./entry"
+import { DerivedEngineEntryDataExtractor } from "../../store"
+import { EngineEntryDataType } from "./entry"
 import { EngineQueueType } from "./queue"
 
 const entryTypeToQueue = (type: EngineEntryDataType): EngineQueueType => {
@@ -16,9 +16,7 @@ const entryTypeToQueue = (type: EngineEntryDataType): EngineQueueType => {
 	}
 }
 
-export const EngineDataExtractor: DerivedEntryEngineDataExtractor<
-	EngineEntryData
-> = (data) => {
+export const EngineDataExtractor: DerivedEngineEntryDataExtractor = (data) => {
 	if (data.type === EngineEntryDataType.NEW) {
 		return {
 			isOutOfSync: data.isOutOfSync ?? true,

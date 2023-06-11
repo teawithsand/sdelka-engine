@@ -1,19 +1,21 @@
+import { UserEntryData } from "../../card"
+import { EngineEntryData, EngineHistoryData } from "../../engine"
 import { IDBComparable } from "../../pubutil"
 
-export type DerivedEntryEngineDataExtractor<T> = (
-	data: T
-) => DerivedEntryEngineData
+export type DerivedEngineEntryDataExtractor = (
+	data: EngineEntryData
+) => DerivedEngineEntryData
 
-export interface DerivedEntryEngineData {
+export interface DerivedEngineEntryData {
 	queue: IDBComparable
 	queuePriority: IDBComparable
 
 	isOutOfSync: boolean
 }
 
-export type DerivedEntryUserDataExtractor<T> = (data: T) => DerivedEntryUserData
+export type DerivedEntryUserDataExtractor = (data: UserEntryData) => DerivedUserEntryData
 
-export interface DerivedEntryUserData {
+export interface DerivedUserEntryData {
 	syncKey: string
 	tags: string[]
 
@@ -21,8 +23,8 @@ export interface DerivedEntryUserData {
 }
 
 
-export type DerivedHistoryDataExtractor<T> = (
-	data: T
+export type DerivedHistoryEntryDataExtractor = (
+	data: EngineHistoryData
 ) => DerivedHistoryData
 
 export interface DerivedHistoryData {

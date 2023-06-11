@@ -1,3 +1,4 @@
+import { UserEntryData } from "../../card"
 import {
 	AsyncCursor,
 	Cursor,
@@ -7,11 +8,10 @@ import {
 	idbComparator,
 } from "../../pubutil"
 import { generateUUID } from "../../util/stl"
-import { DB } from "../db"
+import { DB, DBEntry } from "../db"
 import {
 	EngineEntriesView,
 	EntriesView,
-	Entry,
 	EntryAccess,
 	EntryEntity,
 	EntryOperators,
@@ -19,23 +19,18 @@ import {
 } from "../defines"
 import { DBEntryAccess } from "./entryAccess"
 
-export class DBCollectionEntriesView<EngineEntryData, UserData>
+export class DBCollectionEntriesView
 	implements
-		EntriesView<EngineEntryData, UserData>,
-		MutableEntriesView<EngineEntryData, UserData>,
-		EngineEntriesView<EngineEntryData, UserData>
-{
+	EntriesView,
+	MutableEntriesView,
+	EngineEntriesView {
 	constructor(
-		private readonly db: DB<EngineEntryData, UserData, any, any, any>,
-		private readonly operators: EntryOperators<
-			EngineEntryData,
-			UserData,
-			any
-		>,
+		private readonly db: DB,
+		private readonly operators: EntryOperators,
 		private readonly collectionId: string
-	) {}
+	) { }
 
-	iterate = (): Cursor<EntryEntity<EngineEntryData, UserData>> => {
+	iterate = (): Cursor<EntryEntity> => {
 		const query = () =>
 			this.db.entries
 				.where("[collectionId+id]")
@@ -51,7 +46,7 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 				return (
 					await query().offset(offset).limit(limit).toArray()
 				).map(
-					(e): EntryEntity<EngineEntryData, UserData> => ({
+					(e): EntryEntity => ({
 						id: e.id,
 						userData: e.userData,
 						engineData: e.engineData,
@@ -63,13 +58,13 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 	}
 
 	addCard = async (
-		userData: UserData
-	): Promise<EntryEntity<EngineEntryData, UserData>> => {
+		userData: UserEntryData
+	): Promise<EntryEntity> => {
 		const extractedCard = this.operators.cardDataExtractor(userData)
 		const engineData = this.operators.engineDataInitializer(userData)
 		const extractedEngine = this.operators.engineDataExtractor(engineData)
 
-		const entry: Entry<EngineEntryData, UserData> = {
+		const entry: DBEntry = {
 			id: generateUUID(),
 
 			engineData,
@@ -111,13 +106,13 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 
 	getData = async (
 		id: string
-	): Promise<EntryEntity<EngineEntryData, UserData> | null> => {
+	): Promise<EntryEntity | null> => {
 		return (await (await this.getAccess(id)).getData()) ?? null
 	}
 
 	getAccess = async (
 		entryId: string
-	): Promise<EntryAccess<EngineEntryData, UserData>> => {
+	): Promise<EntryAccess> => {
 		return new DBEntryAccess(
 			this.db,
 			this.operators,
@@ -129,7 +124,7 @@ export class DBCollectionEntriesView<EngineEntryData, UserData>
 	getTopmostQueueEntry = async (
 		queues: IDBComparable[]
 	): Promise<string | null> => {
-		const results: Entry<EngineEntryData, UserData>[] = []
+		const results: DBEntry[] = []
 
 		for (const queue of queues) {
 			const entry = await this.db.entries

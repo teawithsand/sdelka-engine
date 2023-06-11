@@ -1,7 +1,9 @@
 import Dexie, { Table } from "dexie"
 import { IDBComparable } from "../pubutil"
+import { EngineCollectionData, EngineEntryData, EngineHistoryData } from "../engine"
+import { UserCollectionData, UserEntryData } from "../card"
 
-export type DBHistoryEntry<H> = {
+export type DBHistoryEntry = {
 	id: string
 
 	entryId: string
@@ -9,7 +11,7 @@ export type DBHistoryEntry<H> = {
 
 	ordinalNumber: number
 
-	data: H
+	data: EngineHistoryData
 }
 
 export type DBDeletedEntry = {
@@ -22,10 +24,10 @@ export type DBDeletedEntry = {
 	collectionSyncKey: string
 }
 
-export type DBEntry<E, C> = {
+export type DBEntry = {
 	// embedded fields
-	engineData: E
-	userData: C
+	engineData: EngineEntryData
+	userData: UserEntryData
 
 	// misc fields
 	id: string
@@ -46,10 +48,10 @@ export type DBEntry<E, C> = {
 }
 
 
-export type DBCollection<CLD, ESD> = {
+export type DBCollection = {
 	// embedded
-	collectionData: CLD
-	engineData: ESD | null
+	collectionData: UserCollectionData
+	engineData: EngineCollectionData | null
 
 	// own
 	id: string
@@ -61,22 +63,16 @@ export type DBCollection<CLD, ESD> = {
 // Quick note here: DB is sort of internal component, so it's OK for it to have so many generic types.
 // It should be ok for now.
 
-export class DB<
-	CardEngineData,
-	CardData,
-	CollectionData,
-	EngineCollectionData,
-	EngineHistoryData
-> extends Dexie {
+export class DB extends Dexie {
 	// Core tables
-	public readonly entries!: Table<DBEntry<CardEngineData, CardData>>
+	public readonly entries!: Table<DBEntry>
 	public readonly collections!: Table<
-		DBCollection<CollectionData, EngineCollectionData>
+		DBCollection
 	>
 
 	// Support tables - synchronization & history
 	public readonly deletedEntries!: Table<DBDeletedEntry>
-	public readonly historyEntries!: Table<DBHistoryEntry<EngineHistoryData>>
+	public readonly historyEntries!: Table<DBHistoryEntry>
 
 	// Support tables - engine
 

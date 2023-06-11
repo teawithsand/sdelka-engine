@@ -43,10 +43,6 @@ describe("Master store / Master Engine", () => {
 				priority: 0,
 				syncKey: generateUUID(),
 				tags: [],
-				values: {
-					q: i.toString(),
-					a: generateUUID(),
-				},
 			})
 
 			entriesIds.push(entity.id)
@@ -109,9 +105,6 @@ describe("Master store / Master Engine", () => {
 					priority: 0,
 					syncKey: syncKey,
 					tags: [],
-					values: {
-						key: "value",
-					},
 				})
 			}
 			const initialCards = await cardsView.iterate().toArray()

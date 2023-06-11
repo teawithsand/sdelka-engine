@@ -15,19 +15,9 @@ import { EngineStorage } from "./storage"
 
 export class DBEngineStorage implements EngineStorage {
 	constructor(
-		private readonly db: DBCollectionsStore<
-			EngineEntryData,
-			any,
-			any,
-			EngineCollectionData,
-			EngineHistoryData
-		>,
-		private readonly view: EngineEntriesView<EngineEntryData, any>,
-		private readonly collectionAccess: CardCollectionAccess<
-			any,
-			EngineCollectionData,
-			EngineHistoryData
-		>
+		private readonly db: DBCollectionsStore,
+		private readonly view: EngineEntriesView,
+		private readonly collectionAccess: CardCollectionAccess
 	) {}
 
 	transaction = this.db.transaction

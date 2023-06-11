@@ -1,22 +1,19 @@
+import { UserEntryData } from "../../card"
+import { EngineEntryData } from "../../engine"
 import { generateUUID } from "../../util/stl"
 import { DB } from "../db"
 import { EntryAccess, EntryEntity, EntryOperators } from "../defines"
 
-export class DBEntryAccess<EntryEngineData, EntryData>
-	implements EntryAccess<EntryEngineData, EntryData>
-{
+export class DBEntryAccess
+	implements EntryAccess {
 	constructor(
-		private readonly db: DB<EntryEngineData, EntryData, any, any, any>,
-		private readonly operators: EntryOperators<
-			EntryEngineData,
-			EntryData,
-			any
-		>,
+		private readonly db: DB,
+		private readonly operators: EntryOperators,
 		public readonly entryId: string,
 		public readonly collectionId: string
-	) {}
+	) { }
 
-	updateEngineData = async (engineData: EntryEngineData): Promise<void> => {
+	updateEngineData = async (engineData: EngineEntryData): Promise<void> => {
 		this.db.transaction("rw", [this.db.entries], async () => {
 			const data = await this.db.entries.get(this.entryId)
 			if (!data)
@@ -38,7 +35,7 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 		})
 	}
 
-	updateCardData = async (cardData: EntryData): Promise<void> => {
+	updateUserData = async (cardData: UserEntryData): Promise<void> => {
 		this.db.transaction("rw", [this.db.entries], async () => {
 			const data = await this.db.entries.get(this.entryId)
 			if (!data)
@@ -63,10 +60,7 @@ export class DBEntryAccess<EntryEngineData, EntryData>
 		})
 	}
 
-	getData = async (): Promise<EntryEntity<
-		EntryEngineData,
-		EntryData
-	> | null> => {
+	getData = async (): Promise<EntryEntity | null> => {
 		const value = await this.db.entries.get(this.entryId)
 		if (!value) return null
 

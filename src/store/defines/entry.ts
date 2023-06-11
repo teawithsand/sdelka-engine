@@ -1,7 +1,10 @@
-export interface EntryEntity<E, C> {
+import { UserEntryData } from "../../card"
+import { EngineEntryData } from "../../engine"
+
+export interface EntryEntity {
 	id: string
-	engineData: E
-	userData: C
+	engineData: EngineEntryData
+	userData: UserEntryData
 }
 
 export type DeletedEntryEntity = {
@@ -14,6 +17,7 @@ export type DeletedEntryEntity = {
 	collectionSyncKey: string
 }
 
+/*
 export type HistoryEntryEntity<H> = {
 	id: string
 
@@ -24,3 +28,4 @@ export type HistoryEntryEntity<H> = {
 
 	data: H
 }
+*/

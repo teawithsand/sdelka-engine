@@ -1,3 +1,5 @@
+import { UserCollectionData } from "../../card"
+import { EngineCollectionData } from "../../engine"
 import { generateUUID } from "../../util/stl"
 import { DBCollection, DB } from "../db"
 import {
@@ -13,35 +15,12 @@ import {
 import { DBCollectionAccess } from "./collectionAccess"
 import { DBCollectionEntriesView } from "./collectionEntriesView"
 
-export class DBCollectionsStore<
-	EntryEngineData,
-	EntryData,
-	CollectionData,
-	EngineCollectionData,
-	EngineHistoryData
-> implements
-	CardCollectionsStore<
-		EntryEngineData,
-		EntryData,
-		CollectionData,
-		EngineCollectionData,
-		EngineHistoryData
-	>
-{
+export class DBCollectionsStore implements
+	CardCollectionsStore {
 	constructor(
-		private readonly db: DB<
-			EntryEngineData,
-			EntryData,
-			CollectionData,
-			EngineCollectionData,
-			EngineHistoryData
-		>,
-		private readonly operators: EntryOperators<
-			EntryEngineData,
-			EntryData,
-			EngineHistoryData
-		>,
-		private readonly collectionOperators: CollectionOperators<CollectionData>
+		private readonly db: DB,
+		private readonly operators: EntryOperators,
+		private readonly collectionOperators: CollectionOperators
 	) { }
 
 	transaction = <R>(cb: () => Promise<R>): Promise<R> => {
@@ -58,7 +37,7 @@ export class DBCollectionsStore<
 	}
 
 	getCollections = async (): Promise<
-		CollectionEntity<CollectionData, EngineCollectionData>[]
+		CollectionEntity[]
 	> => {
 		return (await this.db.collections.toArray()).map((e) => ({
 			id: e.id,
@@ -70,21 +49,17 @@ export class DBCollectionsStore<
 	getAccess = async (
 		id: string
 	): Promise<
-		CardCollectionAccess<
-			CollectionData,
-			EngineCollectionData,
-			EngineHistoryData
-		>
+		CardCollectionAccess
 	> => {
 		return new DBCollectionAccess(this.db, id, this.operators)
 	}
 
 	createCollection = async (
-		data: CollectionData
-	): Promise<CollectionEntity<CollectionData, EngineCollectionData>> => {
+		data: UserCollectionData
+	): Promise<CollectionEntity> => {
 		const extracted = this.collectionOperators.collectionDataExtractor(data)
 
-		const collection: DBCollection<CollectionData, EngineCollectionData> = {
+		const collection: DBCollection = {
 			id: generateUUID(),
 			collectionData: data,
 			engineData: null,
@@ -102,15 +77,15 @@ export class DBCollectionsStore<
 
 	getCollectionEntriesView = (
 		id: string
-	): MutableEntriesView<EntryEngineData, EntryData> &
-		EngineEntriesView<EntryEngineData, EntryData> => {
+	): MutableEntriesView &
+		EngineEntriesView => {
 		return new DBCollectionEntriesView(this.db, this.operators, id)
 	}
 
 	// for now use bypass - just use cursor and filter on is-in-sync param manually
 	getCollectionSyncEntriesView = (
 		id: string
-	): EntriesView<EntryEngineData, EntryData> => {
+	): EntriesView => {
 		throw new Error("NIY")
 	}
 

@@ -1,14 +1,17 @@
-export type CollectionDerivedDataExtractor<T> = (
-	data: T
-) => CollectionDerivedData
+import { UserCollectionData } from "../../card"
+import { EngineCollectionData } from "../../engine"
 
-export interface CollectionDerivedData {
+export type DerivedUserCollectionDataExtractor = (
+	data: UserCollectionData
+) => DerivedUserCollectionData
+
+export interface DerivedUserCollectionData {
 	syncKey: string
 	isOutOfSync: boolean
 }
 
-export interface CollectionEntity<CLD, ESD> {
+export interface CollectionEntity {
 	id: string
-	collectionData: CLD
-	engineData: ESD | null
+	collectionData: UserCollectionData
+	engineData: EngineCollectionData | null
 }
