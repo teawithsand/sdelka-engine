@@ -1,9 +1,8 @@
 import { generateUUID } from "../../util/stl"
-import { DB } from "../db"
+import { DBCollection, DB } from "../db"
 import {
 	CardCollectionAccess,
 	CardCollectionsStore,
-	Collection,
 	CollectionEntity,
 	CollectionOperators,
 	EngineEntriesView,
@@ -21,13 +20,13 @@ export class DBCollectionsStore<
 	EngineCollectionData,
 	EngineHistoryData
 > implements
-		CardCollectionsStore<
-			EntryEngineData,
-			EntryData,
-			CollectionData,
-			EngineCollectionData,
-			EngineHistoryData
-		>
+	CardCollectionsStore<
+		EntryEngineData,
+		EntryData,
+		CollectionData,
+		EngineCollectionData,
+		EngineHistoryData
+	>
 {
 	constructor(
 		private readonly db: DB<
@@ -43,7 +42,7 @@ export class DBCollectionsStore<
 			EngineHistoryData
 		>,
 		private readonly collectionOperators: CollectionOperators<CollectionData>
-	) {}
+	) { }
 
 	transaction = <R>(cb: () => Promise<R>): Promise<R> => {
 		return this.db.transaction(
@@ -85,7 +84,7 @@ export class DBCollectionsStore<
 	): Promise<CollectionEntity<CollectionData, EngineCollectionData>> => {
 		const extracted = this.collectionOperators.collectionDataExtractor(data)
 
-		const collection: Collection<CollectionData, EngineCollectionData> = {
+		const collection: DBCollection<CollectionData, EngineCollectionData> = {
 			id: generateUUID(),
 			collectionData: data,
 			engineData: null,

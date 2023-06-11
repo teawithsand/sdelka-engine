@@ -1,7 +1,7 @@
 import { TimestampMs } from "../../util/stl"
 import { EngineDailyConfig } from "./config"
 
-export type EngineDailyData = {
+export type EngineDailyCollectionData = {
 	dailyConfig: EngineDailyConfig
 
 	/**
@@ -20,7 +20,7 @@ export type EngineDailyData = {
 	processedNewCount: number
 }
 
-export type EngineSessionData = {
+export type EngineCollectionData = {
 	/**
 	 * Used to ensure that we are using non-backing timer, as using such timer would break our scheduler.
 	 */
@@ -29,5 +29,5 @@ export type EngineSessionData = {
 	/**
 	 * Session data, which gets reset every day.
 	 */
-	dailyData: EngineDailyData
+	dailyData: EngineDailyCollectionData
 }

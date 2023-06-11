@@ -9,7 +9,7 @@ import {
 	EngineEntryData,
 	EngineEntryDataEntity,
 	EngineHistoryData,
-	EngineSessionData,
+	EngineCollectionData,
 } from "../defines"
 import { EngineStorage } from "./storage"
 
@@ -19,20 +19,20 @@ export class DBEngineStorage implements EngineStorage {
 			EngineEntryData,
 			any,
 			any,
-			EngineSessionData,
+			EngineCollectionData,
 			EngineHistoryData
 		>,
 		private readonly view: EngineEntriesView<EngineEntryData, any>,
 		private readonly collectionAccess: CardCollectionAccess<
 			any,
-			EngineSessionData,
+			EngineCollectionData,
 			EngineHistoryData
 		>
 	) {}
 
 	transaction = this.db.transaction
 
-	setSessionData = async (data: EngineSessionData) => {
+	setSessionData = async (data: EngineCollectionData) => {
 		await this.collectionAccess.updateEngineData(data)
 	}
 	getSessionData = async () => {

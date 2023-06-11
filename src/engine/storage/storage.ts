@@ -3,7 +3,7 @@ import {
 	EngineEntryData,
 	EngineEntryDataEntity,
 	EngineHistoryData,
-	EngineSessionData,
+	EngineCollectionData,
 } from "../defines"
 
 /**
@@ -15,8 +15,8 @@ import {
 export interface EngineStorage {
 	transaction<R>(callback: () => Promise<R>): Promise<R>
 
-	setSessionData: (data: EngineSessionData) => Promise<void>
-	getSessionData: () => Promise<EngineSessionData | null>
+	setSessionData: (data: EngineCollectionData) => Promise<void>
+	getSessionData: () => Promise<EngineCollectionData | null>
 
 	// ENTRY FUNCTIONS //
 

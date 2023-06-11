@@ -1,6 +1,6 @@
 import { DerivedEntryUserDataExtractor } from "../../store"
 
-export type EntryUserData = {
+export type UserEntryData = {
 	isOutOfSync: boolean
 	syncKey: string
 	tags: string[]
@@ -11,8 +11,8 @@ export type EntryUserData = {
 	priority: number
 }
 
-export const EntryUserDataExtractor: DerivedEntryUserDataExtractor<
-	EntryUserData
+export const UserEntryDataExtractor: DerivedEntryUserDataExtractor<
+	UserEntryData
 > = (data) => ({
 	isOutOfSync: data.isOutOfSync,
 	syncKey: data.syncKey,

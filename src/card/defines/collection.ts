@@ -1,6 +1,6 @@
 import { CollectionDerivedDataExtractor } from "../../store"
 
-export type CollectionData = {
+export type UserCollectionData = {
 	isOutOfSync: boolean
 	syncKey: string
 
@@ -8,8 +8,8 @@ export type CollectionData = {
     description: string
 }
 
-export const CollectionDataExtractor: CollectionDerivedDataExtractor<
-	CollectionData
+export const UserCollectionDataExtractor: CollectionDerivedDataExtractor<
+	UserCollectionData
 > = (data) => ({
 	isOutOfSync: data.isOutOfSync,
 	syncKey: data.syncKey,

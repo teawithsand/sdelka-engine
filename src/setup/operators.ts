@@ -1,9 +1,9 @@
 import produce from "immer"
 import {
-	CollectionData,
-	CollectionDataExtractor,
-	EntryUserData,
-	EntryUserDataExtractor,
+	UserCollectionData,
+	UserCollectionDataExtractor,
+	UserEntryData,
+	UserEntryDataExtractor,
 } from "../card"
 import {
 	EngineDataExtractor,
@@ -16,10 +16,10 @@ import { getNowTimestamp } from "../util/stl"
 
 export const EntryOperatorsImpl: EntryOperators<
 	EngineEntryData,
-	EntryUserData,
+	UserEntryData,
 	EngineHistoryData
 > = {
-	cardDataExtractor: EntryUserDataExtractor,
+	cardDataExtractor: UserEntryDataExtractor,
 	engineDataExtractor: EngineDataExtractor,
 	engineDataInitializer: (data) => ({
 		type: EngineEntryDataType.NEW,
@@ -42,6 +42,6 @@ export const EntryOperatorsImpl: EntryOperators<
 	},
 }
 
-export const CollectionOperatorsImpl: CollectionOperators<CollectionData> = {
-	collectionDataExtractor: CollectionDataExtractor,
+export const CollectionOperatorsImpl: CollectionOperators<UserCollectionData> = {
+	collectionDataExtractor: UserCollectionDataExtractor,
 }

@@ -1,7 +1,7 @@
 import produce, { Draft } from "immer"
 import { Clock } from "../../../pubutil"
 import { TimestampMs, throwExpression } from "../../../util/stl"
-import { EngineConfig, EngineSessionData } from "../../defines"
+import { EngineConfig, EngineCollectionData } from "../../defines"
 import { EngineStorage } from "../../storage"
 
 export class EngineSessionDataHelper {
@@ -12,7 +12,7 @@ export class EngineSessionDataHelper {
 	) {}
 
 	private isInitialized = false
-	private cachedSessionData: EngineSessionData | null = null
+	private cachedSessionData: EngineCollectionData | null = null
 
 	/**
 	 * @returns True, if called for the first time. False otherwise.
@@ -82,7 +82,7 @@ export class EngineSessionDataHelper {
 	}
 
 	public updateSessionData = async (
-		callback: (draft: Draft<EngineSessionData>) => void
+		callback: (draft: Draft<EngineCollectionData>) => void
 	) => {
 		const newData = produce(this.getData(), callback)
 		await this.storage.setSessionData(newData)
