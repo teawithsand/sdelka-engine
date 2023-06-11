@@ -5,10 +5,10 @@ import {
 	EngineEntryData,
 	EngineEntryDataType,
 } from "../engine"
-import { DebugClock } from "../pubutil"
-import { TimestampMs, generateUUID, throwExpression } from "../util/stl"
 import { App, AppEngineOpts, initializeApp } from "./app"
 import { DefaultEngineConfig } from "./config"
+import { TimestampMs, generateUUID, throwExpression } from "../internal/stl"
+import { DebugClock } from "../util"
 
 describe("Master store / Master Engine", () => {
 	let app: App

@@ -1,18 +1,18 @@
-import { Clock, MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
-import { TimestampMs, filterNotNull } from "../../util/stl"
+import { TimestampMs, filterNotNull } from "../../internal/stl"
+import { Clock, MAX_IDB_KEY, MIN_IDB_KEY } from "../../util"
 import {
-	DailyEntryStats as EngineQueuesStats,
 	EngineAnswer,
 	EngineConfig,
 	EngineDailyConfig,
 	EngineEntryData,
+	EngineEntryDataEntity,
 	EngineEntryDataType,
 	EngineQueueType,
+	DailyEntryStats as EngineQueuesStats,
 	NotDueCardPickStrategy,
-	EngineEntryDataEntity,
 } from "../defines"
-import { EngineStorage } from "../storage"
 import { Engine, EngineCurrentEntryData } from "../defines/engine"
+import { EngineStorage } from "../storage"
 import {
 	EngineEntryTransition,
 	EngineEntryTransitionImpl,
@@ -30,7 +30,7 @@ export class EngineImpl implements Engine {
 		private readonly storage: EngineStorage,
 		private readonly clock: Clock,
 		private readonly config: EngineConfig
-	) {}
+	) { }
 
 	private readonly sessionDataHelper = new EngineSessionDataHelper(
 		this.storage,
@@ -68,20 +68,20 @@ export class EngineImpl implements Engine {
 
 				const shouldPollLearned =
 					this.sessionDataHelper.dailyConfig.learnedCountLimit ===
-						null ||
+					null ||
 					this.sessionDataHelper.dailyData.processedLearnedCount <
-						this.sessionDataHelper.dailyConfig.learnedCountLimit
+					this.sessionDataHelper.dailyConfig.learnedCountLimit
 
 				let learnedCandidate = shouldPollLearned
 					? await this.storage.getTopEntryOnQueue([
-							EngineQueueType.LEARNED,
-					  ])
+						EngineQueueType.LEARNED,
+					])
 					: null
 
 				let newCandidate = shouldPollNew
 					? await this.storage.getTopEntryOnQueue([
-							EngineQueueType.NEW,
-					  ])
+						EngineQueueType.NEW,
+					])
 					: null
 
 				let processingCandidate = await this.storage.getTopEntryOnQueue(
@@ -125,9 +125,9 @@ export class EngineImpl implements Engine {
 				if (processingCandidate) {
 					if (
 						processingCandidate.data.type !==
-							EngineEntryDataType.LEARNING &&
+						EngineEntryDataType.LEARNING &&
 						processingCandidate.data.type !==
-							EngineEntryDataType.RELEARNING
+						EngineEntryDataType.RELEARNING
 					) {
 						throw new Error(
 							`processingCandidate is neither LEARNING or RELEARNING; assertion filed`
@@ -321,7 +321,7 @@ export class EngineImpl implements Engine {
 		await this.prologue()
 
 		await this.storage.transaction(async () => {
-			for (;;) {
+			for (; ;) {
 				const historyData = await this.storage.peekHistoryEntry()
 				if (!historyData) return
 
@@ -398,7 +398,7 @@ export class EngineImpl implements Engine {
 			Math.max(
 				0,
 				this.sessionDataHelper.dailyConfig.newCardLimit -
-					this.sessionDataHelper.dailyData.processedNewCount
+				this.sessionDataHelper.dailyData.processedNewCount
 			),
 			await this.storage.getQueueLengthInRange(
 				EngineQueueType.NEW,
@@ -427,7 +427,7 @@ export class EngineImpl implements Engine {
 
 		const endTs = this.clock.getEndDayTimestamp(
 			this.sessionDataHelper.dailyData.dayTimestamp +
-				this.sessionDataHelper.dailyConfig.learnedCardDaysFutureAllowed
+			this.sessionDataHelper.dailyConfig.learnedCardDaysFutureAllowed
 		)
 
 		const learnedLeft = await this.storage.getQueueLengthInRange(
@@ -442,7 +442,7 @@ export class EngineImpl implements Engine {
 			newCardsLeft,
 			learnedLeft: Math.min(
 				this.sessionDataHelper.dailyConfig.learnedCountLimit ??
-					Infinity,
+				Infinity,
 				learnedLeft
 			),
 			relearningLeft,

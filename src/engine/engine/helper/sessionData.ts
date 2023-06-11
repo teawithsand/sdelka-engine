@@ -1,8 +1,8 @@
 import produce, { Draft } from "immer"
-import { Clock } from "../../../pubutil"
-import { TimestampMs, throwExpression } from "../../../util/stl"
+import { TimestampMs, throwExpression } from "../../../internal/stl"
 import { EngineConfig, EngineCollectionData } from "../../defines"
 import { EngineStorage } from "../../storage"
+import { Clock } from "../../../util"
 
 export class EngineSessionDataHelper {
 	constructor(

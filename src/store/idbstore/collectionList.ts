@@ -1,6 +1,6 @@
 import { UserCollectionData } from "../../card"
 import { EngineCollectionData } from "../../engine"
-import { generateUUID } from "../../util/stl"
+import { generateUUID } from "../../internal/stl"
 import { DBCollection, DB } from "../db"
 import {
 	CardCollectionAccess,

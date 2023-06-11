@@ -1,4 +1,4 @@
-import { IDBComparable } from "../../pubutil"
+import { IDBComparable } from "../../util"
 import {
 	EngineEntryData,
 	EngineEntryDataEntity,

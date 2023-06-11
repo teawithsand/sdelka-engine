@@ -7,7 +7,7 @@ import {
 	EngineEntryDataType
 } from "../engine"
 import { CollectionOperators, EntryOperators } from "../store"
-import { getNowTimestamp } from "../util/stl"
+import { getNowTimestamp } from "../internal/stl"
 
 export const EntryOperatorsImpl: EntryOperators = {
 	cardDataExtractor: UserEntryDataExtractor,

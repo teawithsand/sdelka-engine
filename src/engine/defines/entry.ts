@@ -1,5 +1,5 @@
-import { IDBComparable, TimeMs } from "../../pubutil"
-import { TimestampMs } from "../../util/stl"
+import { TimestampMs } from "../../internal/stl"
+import { IDBComparable, TimeMs } from "../../util"
 
 export enum EngineEntryDataType {
 	NEW = 0,

@@ -1,7 +1,7 @@
 import Dexie, { Table } from "dexie"
-import { IDBComparable } from "../pubutil"
 import { EngineCollectionData, EngineEntryData, EngineHistoryData } from "../engine"
 import { UserCollectionData, UserEntryData } from "../card"
+import { IDBComparable } from "../util"
 
 export type DBHistoryEntry = {
 	id: string

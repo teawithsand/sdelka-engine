@@ -1,5 +1,4 @@
 import produce from "immer"
-import { IDBComparable } from "../../pubutil"
 import {
 	CardCollectionAccess,
 	DBCollectionsStore,
@@ -12,6 +11,7 @@ import {
 	EngineCollectionData,
 } from "../defines"
 import { EngineStorage } from "./storage"
+import { IDBComparable } from "../../util"
 
 export class DBEngineStorage implements EngineStorage {
 	constructor(

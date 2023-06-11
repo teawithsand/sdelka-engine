@@ -1,6 +1,6 @@
 import { UserEntryData } from "../../card"
 import { EngineEntryData } from "../../engine"
-import { generateUUID } from "../../util/stl"
+import { generateUUID } from "../../internal/stl"
 import { DB } from "../db"
 import { EntryAccess, EntryEntity, EntryOperators } from "../defines"
 

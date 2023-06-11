@@ -1,4 +1,4 @@
-import { TimeMs } from "../../pubutil"
+import { TimeMs } from "../../util"
 
 export type EngineDailyConfig = {
 	/**

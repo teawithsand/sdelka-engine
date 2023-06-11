@@ -1,6 +1,6 @@
 import { UserEntryData } from "../../card"
 import { EngineEntryData } from "../../engine"
-import { Cursor, IDBComparable } from "../../pubutil"
+import { Cursor, IDBComparable } from "../../util"
 import { EntryEntity } from "./entry"
 
 export interface EntriesView {

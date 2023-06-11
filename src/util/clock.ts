@@ -1,5 +1,5 @@
-import { TimeMs } from "../pubutil/time"
-import { TimestampMs, getNowTimestamp } from "../util/stl"
+import { TimestampMs, getNowTimestamp } from "../internal/stl"
+import { TimeMs } from "./time"
 
 /**
  * Like TimestampMs, but expressed in days.

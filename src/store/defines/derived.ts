@@ -1,6 +1,6 @@
 import { UserEntryData } from "../../card"
 import { EngineEntryData, EngineHistoryData } from "../../engine"
-import { IDBComparable } from "../../pubutil"
+import { IDBComparable } from "../../util"
 
 export type DerivedEngineEntryDataExtractor = (
 	data: EngineEntryData

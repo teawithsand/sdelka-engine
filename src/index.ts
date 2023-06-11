@@ -1,5 +1,5 @@
 export * from "./card"
 export * from "./engine"
-export * from "./pubutil"
+export * from "./util"
 export * from "./setup"
 export * from "./store"

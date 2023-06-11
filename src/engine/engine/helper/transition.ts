@@ -1,5 +1,5 @@
 import produce from "immer"
-import { TimestampMs } from "../../../util/stl"
+import { TimestampMs } from "../../../internal/stl"
 import {
 	EngineAnswer,
 	EngineConfig,

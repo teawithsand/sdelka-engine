@@ -1,4 +1,4 @@
-import { TimestampMs } from "../../util/stl"
+import { TimestampMs } from "../../internal/stl"
 import { EngineDailyConfig } from "./config"
 
 export type EngineDailyCollectionData = {
