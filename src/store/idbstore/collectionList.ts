@@ -13,6 +13,7 @@ import {
 } from "../defines"
 import { DBCollectionAccess } from "./collectionAccess"
 import { DBCollectionEntriesView } from "./collectionEntriesView"
+
 export class DBCollectionsStore<
 	EntryEngineData,
 	EntryData,

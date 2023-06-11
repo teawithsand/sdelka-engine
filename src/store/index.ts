@@ -1,3 +1,3 @@
 export * from "./db"
-export * from "./store"
+export * from "./idbstore"
 export * from "./defines"

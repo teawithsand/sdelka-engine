@@ -1,5 +1,5 @@
 import { MAX_IDB_KEY, MIN_IDB_KEY } from "../../pubutil"
-import { generateUUID, throwExpression } from "../../util/stl"
+import { generateUUID } from "../../util/stl"
 import { DB } from "../db"
 import {
 	CardCollectionAccess,
@@ -12,11 +12,11 @@ export class DBCollectionAccess<
 	EngineCollectionData,
 	EngineHistoryData
 > implements
-		CardCollectionAccess<
-			CollectionData,
-			EngineCollectionData,
-			EngineHistoryData
-		>
+	CardCollectionAccess<
+		CollectionData,
+		EngineCollectionData,
+		EngineHistoryData
+	>
 {
 	constructor(
 		private readonly db: DB<
@@ -28,7 +28,7 @@ export class DBCollectionAccess<
 		>,
 		public readonly collectionId: string,
 		private readonly operators: EntryOperators<any, any, EngineHistoryData>
-	) {}
+	) { }
 
 	private obtainData = async () => {
 		const data = await this.db.collections.get(this.collectionId)
