@@ -51,6 +51,12 @@ export type EngineEntryData = {
 )
 
 
+/**
+ * Entity, which is only used in scope of engine. Represents EngineEntryData with id.
+ * 
+ * It should not be used by external library users unless they are shipping alternative engine implementation
+ * or EngineStorage implementation.
+ */
 export type EngineEntryDataEntity = {
     id: string
     data: EngineEntryData

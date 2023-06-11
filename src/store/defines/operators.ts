@@ -3,7 +3,7 @@ import { EngineEntryData } from "../../engine"
 import { DerivedUserCollectionDataExtractor } from "./collection"
 import {
 	DerivedHistoryEntryDataExtractor,
-	DerivedEntryUserDataExtractor,
+	DerivedUserEntryDataExtractor,
 	DerivedEngineEntryDataExtractor,
 } from "./derived"
 
@@ -25,7 +25,7 @@ export interface EntryOperators {
 	) => EngineEntryData
 
 	engineDataExtractor: DerivedEngineEntryDataExtractor
-	cardDataExtractor: DerivedEntryUserDataExtractor
+	cardDataExtractor: DerivedUserEntryDataExtractor
 	historyDataExtractor: DerivedHistoryEntryDataExtractor
 }
 

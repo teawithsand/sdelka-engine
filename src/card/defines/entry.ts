@@ -1,4 +1,4 @@
-import { DerivedEntryUserDataExtractor } from "../../store"
+import { DerivedUserEntryDataExtractor } from "../../store"
 
 export type UserEntryData = {
 	isOutOfSync: boolean
@@ -15,7 +15,7 @@ export type UserEntryData = {
 	external?: any
 }
 
-export const UserEntryDataExtractor: DerivedEntryUserDataExtractor = (data) => ({
+export const DerivedEntryUserDataExtractorImpl: DerivedUserEntryDataExtractor = (data) => ({
 	isOutOfSync: data.isOutOfSync,
 	syncKey: data.syncKey,
 	tags: data.tags,

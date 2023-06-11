@@ -16,7 +16,7 @@ const entryTypeToQueue = (type: EngineEntryDataType): EngineQueueType => {
 	}
 }
 
-export const EngineDataExtractor: DerivedEngineEntryDataExtractor = (data) => {
+export const DerivedEngineEntryDataExtractorImpl: DerivedEngineEntryDataExtractor = (data) => {
 	if (data.type === EngineEntryDataType.NEW) {
 		return {
 			isOutOfSync: data.isOutOfSync ?? true,

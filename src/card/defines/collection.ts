@@ -8,7 +8,7 @@ export type UserCollectionData = {
 	description: string
 }
 
-export const UserCollectionDataExtractor: DerivedUserCollectionDataExtractor = (data) => ({
+export const DerivedUserCollectionDataExtractorImpl: DerivedUserCollectionDataExtractor = (data) => ({
 	isOutOfSync: data.isOutOfSync,
 	syncKey: data.syncKey,
 })

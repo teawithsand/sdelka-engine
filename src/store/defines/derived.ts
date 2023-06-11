@@ -13,7 +13,7 @@ export interface DerivedEngineEntryData {
 	isOutOfSync: boolean
 }
 
-export type DerivedEntryUserDataExtractor = (data: UserEntryData) => DerivedUserEntryData
+export type DerivedUserEntryDataExtractor = (data: UserEntryData) => DerivedUserEntryData
 
 export interface DerivedUserEntryData {
 	syncKey: string
@@ -25,8 +25,8 @@ export interface DerivedUserEntryData {
 
 export type DerivedHistoryEntryDataExtractor = (
 	data: EngineHistoryData
-) => DerivedHistoryData
+) => DerivedHistoryEntryData
 
-export interface DerivedHistoryData {
+export interface DerivedHistoryEntryData {
 	entryId: string
 }

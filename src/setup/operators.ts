@@ -1,17 +1,17 @@
 import {
-	UserCollectionDataExtractor,
-	UserEntryDataExtractor
+	DerivedUserCollectionDataExtractorImpl,
+	DerivedEntryUserDataExtractorImpl
 } from "../card"
 import {
-	EngineDataExtractor,
+	DerivedEngineEntryDataExtractorImpl,
 	EngineEntryDataType
 } from "../engine"
 import { CollectionOperators, EntryOperators } from "../store"
 import { getNowTimestamp } from "../internal/stl"
 
 export const EntryOperatorsImpl: EntryOperators = {
-	cardDataExtractor: UserEntryDataExtractor,
-	engineDataExtractor: EngineDataExtractor,
+	cardDataExtractor: DerivedEntryUserDataExtractorImpl,
+	engineDataExtractor: DerivedEngineEntryDataExtractorImpl,
 	engineDataInitializer: (data) => ({
 		type: EngineEntryDataType.NEW,
 		ordinalNumber: getNowTimestamp() + Math.random(),
@@ -34,5 +34,5 @@ export const EntryOperatorsImpl: EntryOperators = {
 }
 
 export const CollectionOperatorsImpl: CollectionOperators = {
-	collectionDataExtractor: UserCollectionDataExtractor,
+	collectionDataExtractor: DerivedUserCollectionDataExtractorImpl,
 }
