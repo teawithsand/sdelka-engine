@@ -1,5 +1,5 @@
 import { Cursor, ID, MAX_IDB_KEY, MIN_IDB_KEY, idbComparator } from "../../../util"
-import { ScopeDB } from "../defines/db"
+import { ScopeDB } from "../defines"
 import { IDBDB, IDBDBCard, IDBDBHistoryEntryType, IDBDBState } from "./idb"
 
 export enum IDBScopeDBQueryType {
