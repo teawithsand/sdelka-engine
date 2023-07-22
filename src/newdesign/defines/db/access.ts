@@ -1,4 +1,4 @@
-import { ID, IDBComparable } from "../../../util";
+import { Cursor, ID, IDBComparable } from "../../../util";
 import { Card } from "../card";
 
 /**
@@ -27,4 +27,11 @@ export interface ExtendedPriorityReadCardAccess<S, D> extends PriorityReadCardAc
         maxInclusive: boolean,
         groups: ID[],
     ) => Promise<number>,
+}
+
+export interface SyncCardAccess<S, D> {
+    getModifiedCards: () => Promise<Cursor<Card<S, D>>>
+    getDeletedCards: () => Promise<Cursor<Card<S, D>>>
+    flushDeletedCards: () => Promise<void>
+    flushDeletedCard: (id: ID) => Promise<void>
 }
