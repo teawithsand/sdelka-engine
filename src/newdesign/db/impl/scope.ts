@@ -1,4 +1,4 @@
-import { Cursor, ID, MAX_IDB_KEY, MIN_IDB_KEY, idbComparator } from "../../../util"
+import { AsyncCursor, Cursor, ID, MAX_IDB_KEY, MIN_IDB_KEY, idbComparator } from "../../../util"
 import { ScopeDB } from "../defines"
 import { IDBDB, IDBDBCard, IDBDBHistoryEntryType, IDBDBState } from "./idb"
 
@@ -54,7 +54,7 @@ export type IDBScopeDBWrite<C, S> = {
 } | {
     type: IDBScopeDBWriteType.UNDO_BOUNDARY
     history?: undefined | false,
-}  | {
+} | {
     type: IDBScopeDBWriteType.UNDO,
     history?: undefined | false,
 } | {
@@ -146,7 +146,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
 
     private handleCommand = async (command: IDBScopeDBWrite<C, S>) => {
         // TODO(teawithsand): implement command.history handling
-        
+
         const history = command.history ?? true
         if (command.type === IDBScopeDBWriteType.UNDO_BOUNDARY) {
             await this.db.history.where("scope").equals(this.scope).delete()
@@ -189,7 +189,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             await this.makeHistoryEntryForCard(command.id, ndctr, IDBDBHistoryEntryType.CARD_DELETION)
 
             await this.db.cards.where("[scope+id]").equals([this.scope, command.id]).delete()
-        } else if(command.type === IDBScopeDBWriteType.DELETE_MARKED_AS_DELETED) {
+        } else if (command.type === IDBScopeDBWriteType.DELETE_MARKED_AS_DELETED) {
             await this.getAndIncrementNDCTR()
             // TODO(teawithsand): create history entry for that event OR document 
             //  it somehow that it's not subject for undoing
@@ -257,12 +257,55 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             } else {
                 return null
             }
+        } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
+            const partial = this.db.cards
+                .where("[scope+deletedAt+lastModifiedAt]")
+                .between(
+                    [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, MIN_IDB_KEY],
+                    [this.scope, MAX_IDB_KEY, MAX_IDB_KEY],
+                    !query.omitDeleted,
+                    true,
+                )
+            if (query.asc) {
+                return (await partial.first())?.data ?? null
+            } else {
+                return (await partial.last())?.data ?? null
+            }
         } else {
             throw new Error("NIY")
         }
     }
 
     queryMany = async (query: IDBScopeDBQuery): Promise<Cursor<C>> => {
-        throw new Error("NIY")
+        const makeQuery = () => {
+            if (query.type === IDBScopeDBQueryType.BY_ID) {
+                return this.db.cards.where("id").equals(query.id)
+            } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
+                throw new Error("This query can't be launched against multiple entires")
+            } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
+                return this.db.cards
+                    .where("[scope+deletedAt+lastModifiedAt]")
+                    .between(
+                        [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, MIN_IDB_KEY],
+                        [this.scope, MAX_IDB_KEY, MAX_IDB_KEY],
+                        !query.omitDeleted,
+                        true,
+                    )
+            } else {
+                throw new Error("NIY")
+            }
+        }
+
+        return new AsyncCursor({
+            fetch: async (offset, limit) => {
+                return (await makeQuery()
+                    .offset(offset)
+                    .limit(limit)
+                    .toArray()).map((c) => (c.data))
+            },
+            count: async () => {
+                return await makeQuery().count()
+            }
+        })
     }
 }
