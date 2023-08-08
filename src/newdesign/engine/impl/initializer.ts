@@ -1,13 +1,13 @@
 import { ScopeDB } from "../../db/defines";
 import { EngineInitializer } from "../defines";
 
-export class IDBScopeDBEngineInitializer<EG> implements EngineInitializer<EG> {
+export class IDBScopeDBEngineInitializer<EP> implements EngineInitializer<EP> {
     constructor(
-        private readonly db: ScopeDB<any, EG, any, any>,
-        public readonly fallback: EG,
+        private readonly db: ScopeDB<any, EP, any, any>,
+        public readonly fallback: EP,
     ) { }
 
-    loadEngineGlobalState = async (): Promise<EG> => {
+    loadEngineGlobalState = async (): Promise<EP> => {
         return (await this.db.getState()) ?? this.fallback
     }
 }

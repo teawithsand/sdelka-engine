@@ -1,13 +1,11 @@
-import { EngineStatsLoader, SM2EngineGlobalState, SM2Statistics, SM2UserGlobalState } from "../defines";
+import { EngineStatsLoader, SM2EngineState, SM2Statistics, SM2UserState } from "../defines";
 
-export class SM2EngineStats implements EngineStatsLoader<
-    SM2EngineGlobalState,
-    SM2UserGlobalState,
+export class SM2EngineStatsLoader implements EngineStatsLoader<
+    SM2EngineState,
     SM2Statistics
 >{
     getStatistics = (
-        engineGlobalState: SM2EngineGlobalState,
-        userGlobalState: SM2UserGlobalState
+        enginesState: SM2EngineState,
     ): Promise<SM2Statistics> => {
         throw new Error("NIY")
     }

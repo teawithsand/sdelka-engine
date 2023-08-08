@@ -2,65 +2,65 @@ import { EngineCard } from "./card"
 
 export type CardStateTransitionResult<EG, CS> = {
     cardState: CS,
-    engineGlobalState: EG
+    engineState: EG
 }
 
-export interface EngineStateTransition<EG, UG, UA, CS, MSG> {
+export interface EngineStateTransition<EG, UA, CS, MSG> {
     transitionEngineCommand: (
-        engineGlobalState: EG,
-        userGlobalState: UG,
+        engineState: EG,
         message: MSG
     ) => EG
 
     transitionCardState: (
-        engineGlobalState: EG,
-        userGlobalState: UG,
+        engineState: EG,
         userAnswer: UA,
         cardState: CS
     ) => CardStateTransitionResult<EG, CS>
 }
 
-export interface EngineSaver<EG, CS, CD> {
-    saveEngineStateTransition: (eg: EG) => Promise<void>
+export interface EngineSaver<EP, CS, CD> {
+    saveEngineStateTransition: (persistentEngineState: EP) => Promise<void>
     saveStateCardTransitionResult: (
         originalCard: EngineCard<CS, CD>,
-        transitionResult: CardStateTransitionResult<EG, CS>,
+        transitionResult: CardStateTransitionResult<EP, CS>,
     ) => Promise<void>
     undo: () => Promise<void>
 }
 
-export interface EngineInitializer<EG> {
+export interface EngineStateManager<ES, EP, UG> {
+    getEngineState: (enginePersistentState: EP, userGlobalState: UG) => ES
+    getPersistentState: (engineState: ES) => EP,
+}
+
+export interface EngineInitializer<EP> {
     /**
      * Loads engine global state. 
      * 
      * This function should be called only once during initialization. 
      * Then state should be managed internally in-memory until engine is reinitialized.
      */
-    loadEngineGlobalState: () => Promise<EG>
+    loadEngineGlobalState: () => Promise<EP>
 }
 
 /**
  * Component responsible for loading the topmost card.
  */
-export interface EngineCardLoader<EG, UG, CS, CD> {
-
+export interface EngineCardLoader<ES, CS, CD> {
     /**
      * Loads whatever card is considered fittest by this loader.
      * 
      * It may also return null when it thinks that there is no more card to process for some reason.
      */
     loadCardState: (
-        engineGlobalState: EG,
-        userGlobalState: UG,
+        engineState: ES,
     ) => Promise<EngineCard<CS, CD> | null>
 }
 
 /**
  * Component responsible for gathering any kind of statistics for end user from given engine.
  */
-export interface EngineStatsLoader<EG, UG, ST> {
+export interface EngineStatsLoader<ES, ST> {
     getStatistics: (
-        engineGlobalState: EG,
-        userGlobalState: UG
+        engineState: ES,
     ) => Promise<ST>
 }

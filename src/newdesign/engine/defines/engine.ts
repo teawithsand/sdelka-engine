@@ -1,5 +1,5 @@
 import { EngineCard } from "./card"
-import { EngineCardLoader, EngineInitializer, EngineSaver, EngineStateTransition, EngineStatsLoader } from "./components"
+import { EngineCardLoader, EngineInitializer, EngineSaver, EngineStateManager, EngineStateTransition, EngineStatsLoader } from "./components"
 
 /**
  * Handle, which represents card selected by card loader with possibility of giving an answer
@@ -22,28 +22,32 @@ export interface Engine<UG, UA, CD, CS, MSG, ST> {
     getStatistics: (userGlobalState: UG) => Promise<ST>
 }
 
-export class EngineImpl<EG, UG, UA, CD, CS, MSG, ST> implements Engine<UG, UA, CD, CS, MSG, ST> {
-    private engineGlobalState: EG | null = null
+export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, UA, CD, CS, MSG, ST> {
+    private persistentEngineState: EP | null = null
 
     constructor(
-        private readonly initializer: EngineInitializer<EG>,
-        private readonly stateTransition: EngineStateTransition<EG, UG, UA, CS, MSG>,
-        private readonly saver: EngineSaver<EG, CS, CD>,
-        private readonly loader: EngineCardLoader<EG, UG, CS, CD>,
-        private readonly stats: EngineStatsLoader<EG, UG, ST>,
+        private readonly initializer: EngineInitializer<EP>,
+        private readonly stateTransition: EngineStateTransition<ES, UA, CS, MSG>,
+        private readonly saver: EngineSaver<EP, CS, CD>,
+        private readonly loader: EngineCardLoader<ES, CS, CD>,
+        private readonly stats: EngineStatsLoader<ES, ST>,
+        private readonly manager: EngineStateManager<ES, EP, UG>,
     ) { }
 
-    private getEngineGlobalState = async (): Promise<EG> => {
-        if (this.engineGlobalState === null) {
-            this.engineGlobalState = await this.initializer.loadEngineGlobalState()
+    private getEnginePersistentState = async (): Promise<EP> => {
+        if (this.persistentEngineState === null) {
+            this.persistentEngineState = await this.initializer.loadEngineGlobalState()
         }
 
-        return this.engineGlobalState
+        return this.persistentEngineState
     }
 
     getCard = async (userGlobalState: UG): Promise<EngineCardHandle<UA, CS, CD> | null> => {
-        const engineGlobalState = await this.getEngineGlobalState()
-        const card = await this.loader.loadCardState(engineGlobalState, userGlobalState)
+        const enginePersistentState = await this.getEnginePersistentState()
+        const engineState = this.manager.getEngineState(enginePersistentState, userGlobalState)
+
+        const card = await this.loader.loadCardState(engineState)
+
         if (card === null) {
             return null
         }
@@ -58,32 +62,43 @@ export class EngineImpl<EG, UG, UA, CD, CS, MSG, ST> implements Engine<UG, UA, C
                 if (isClosed) {
                     throw new Error(`This handle was used already`)
                 }
-                const result = this.stateTransition.transitionCardState(
-                    engineGlobalState,
-                    userGlobalState,
-                    userAnswer,
-                    card.state,
-                )
+                try {
+                    const result = this.stateTransition.transitionCardState(
+                        engineState,
+                        userAnswer,
+                        card.state,
+                    )
 
-                await this.saver.saveStateCardTransitionResult(
-                    card,
-                    result,
-                )
+                    const newPersistentEngineState = this.manager.getPersistentState(result.engineState)
 
-                this.engineGlobalState = result.engineGlobalState
+                    await this.saver.saveStateCardTransitionResult(
+                        card,
+                        {
+                            cardState: result.cardState,
+                            engineState: newPersistentEngineState,
+                        },
+                    )
+                    this.persistentEngineState = newPersistentEngineState
+                } finally {
+                    isClosed = true
+                }
             }
         }
     }
 
     passMessage = async (userGlobalState: UG, message: MSG): Promise<void> => {
+        const enginePersistentState = await this.getEnginePersistentState()
+        const engineState = this.manager.getEngineState(enginePersistentState, userGlobalState)
+
         const newEngineGlobalState = this.stateTransition.transitionEngineCommand(
-            await this.getEngineGlobalState(),
-            userGlobalState,
+            engineState,
             message,
         )
 
-        await this.saver.saveEngineStateTransition(newEngineGlobalState)
-        this.engineGlobalState = newEngineGlobalState
+        const newPersistentEngineState = this.manager.getPersistentState(newEngineGlobalState)
+
+        await this.saver.saveEngineStateTransition(newPersistentEngineState)
+        this.persistentEngineState = newPersistentEngineState
     }
 
     undo = async () => {
@@ -92,8 +107,7 @@ export class EngineImpl<EG, UG, UA, CD, CS, MSG, ST> implements Engine<UG, UA, C
 
     getStatistics = async (userGlobalState: UG): Promise<ST> => {
         return await this.stats.getStatistics(
-            await this.getEngineGlobalState(),
-            userGlobalState,
+            this.manager.getEngineState(await this.getEnginePersistentState(), userGlobalState),
         )
     }
 }

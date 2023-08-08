@@ -5,17 +5,17 @@ import { CardStateTransitionResult, EngineCard, EngineSaver } from "../defines";
 /**
  * EngineSaver designed to work with IDBScopeDB.
  */
-export class IDBScopeDBEngineSaver<EG, CS, CD> implements EngineSaver<EG, CS, CD> {
+export class IDBScopeDBEngineSaver<EP, CS, CD> implements EngineSaver<EP, CS, CD> {
     constructor(
         private readonly db: ScopeDB<
             EngineCard<CS, CD>,
-            EG,
-            IDBScopeDBWrite<EngineCard<CS, CD>, EG>,
+            EP,
+            IDBScopeDBWrite<EngineCard<CS, CD>, EP>,
             IDBScopeDBQuery
         >,
     ) { }
 
-    saveEngineStateTransition = async (eg: EG) => {
+    saveEngineStateTransition = async (eg: EP) => {
         await this.db.write([{
             type: IDBScopeDBWriteType.STATE,
             state: eg,
@@ -24,7 +24,7 @@ export class IDBScopeDBEngineSaver<EG, CS, CD> implements EngineSaver<EG, CS, CD
 
     saveStateCardTransitionResult = async (
         originalCard: EngineCard<CS, CD>,
-        transitionResult: CardStateTransitionResult<EG, CS>
+        transitionResult: CardStateTransitionResult<EP, CS>
     ) => {
         await this.db.write([
             {
@@ -33,7 +33,7 @@ export class IDBScopeDBEngineSaver<EG, CS, CD> implements EngineSaver<EG, CS, CD
                     data: originalCard.data,
                     state: transitionResult.cardState,
                 },
-                state: transitionResult.engineGlobalState,
+                state: transitionResult.engineState,
             }
         ])
     }

@@ -1,14 +1,26 @@
-export type SM2EngineGlobalState = {
+import { TimestampMs } from "../../../../internal"
 
+export * from "./card"
+export * from "./state"
+export * from "./stats"
+export * from "./config"
+
+export type SM2UserState = {
+     now: TimestampMs
+	 
+	// ignoreReviewLimit: boolean // TODO(teawithsand): implement it
+	// ignoreNewLimit: boolean // TODO(teawithsand): implement it
 }
 
-export type SM2UserGlobalState = {
+export enum SM2EngineAnswer {
+	EASY = 1,
+	GOOD = 2,
+	HARD = 3,
+	AGAIN = 4,
+}
+
+export enum SM2EngineMessageType {
 
 }
-export type SM2CardState = {}
-
-export type SM2EngineAnswer = {}
 
 export type SM2EngineMessage = {}
-
-export type SM2Statistics = {}
