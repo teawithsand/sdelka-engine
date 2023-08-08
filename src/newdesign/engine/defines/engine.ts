@@ -1,5 +1,5 @@
 import { EngineCard } from "./card"
-import { EngineCardLoader, EngineInitializer, EngineSaver, EngineStateTransition, EngineStats } from "./components"
+import { EngineCardLoader, EngineInitializer, EngineSaver, EngineStateTransition, EngineStatsLoader } from "./components"
 
 /**
  * Handle, which represents card selected by card loader with possibility of giving an answer
@@ -23,19 +23,22 @@ export interface Engine<UG, UA, CD, CS, MSG, ST> {
 }
 
 export class EngineImpl<EG, UG, UA, CD, CS, MSG, ST> implements Engine<UG, UA, CD, CS, MSG, ST> {
+    private engineGlobalState: EG | null = null
+
     constructor(
-        private readonly initialize: EngineInitializer<EG>,
+        private readonly initializer: EngineInitializer<EG>,
         private readonly stateTransition: EngineStateTransition<EG, UG, UA, CS, MSG>,
         private readonly saver: EngineSaver<EG, CS, CD>,
         private readonly loader: EngineCardLoader<EG, UG, CS, CD>,
-        private readonly stats: EngineStats<EG, UG, ST>,
+        private readonly stats: EngineStatsLoader<EG, UG, ST>,
     ) { }
 
-    private getEngineGlobalState = (): Promise<EG> => {
-        throw new Error("NIY")
-    }
-    private storeEngineGlobalState = (eg: EG): void => {
-        throw new Error("NIY")
+    private getEngineGlobalState = async (): Promise<EG> => {
+        if (this.engineGlobalState === null) {
+            this.engineGlobalState = await this.initializer.loadEngineGlobalState()
+        }
+
+        return this.engineGlobalState
     }
 
     getCard = async (userGlobalState: UG): Promise<EngineCardHandle<UA, CS, CD> | null> => {
@@ -67,10 +70,11 @@ export class EngineImpl<EG, UG, UA, CD, CS, MSG, ST> implements Engine<UG, UA, C
                     result,
                 )
 
-                this.storeEngineGlobalState(result.engineGlobalState)
+                this.engineGlobalState = result.engineGlobalState
             }
         }
     }
+
     passMessage = async (userGlobalState: UG, message: MSG): Promise<void> => {
         const newEngineGlobalState = this.stateTransition.transitionEngineCommand(
             await this.getEngineGlobalState(),
@@ -79,7 +83,7 @@ export class EngineImpl<EG, UG, UA, CD, CS, MSG, ST> implements Engine<UG, UA, C
         )
 
         await this.saver.saveEngineStateTransition(newEngineGlobalState)
-        this.storeEngineGlobalState(newEngineGlobalState)
+        this.engineGlobalState = newEngineGlobalState
     }
 
     undo = async () => {

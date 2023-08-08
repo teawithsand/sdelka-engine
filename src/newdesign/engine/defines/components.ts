@@ -39,7 +39,11 @@ export interface EngineInitializer<EG> {
     loadEngineGlobalState: () => Promise<EG>
 }
 
+/**
+ * Component responsible for loading the topmost card.
+ */
 export interface EngineCardLoader<EG, UG, CS, CD> {
+
     /**
      * Loads whatever card is considered fittest by this loader.
      * 
@@ -54,7 +58,7 @@ export interface EngineCardLoader<EG, UG, CS, CD> {
 /**
  * Component responsible for gathering any kind of statistics for end user from given engine.
  */
-export interface EngineStats<EG, UG, ST> {
+export interface EngineStatsLoader<EG, UG, ST> {
     getStatistics: (
         engineGlobalState: EG,
         userGlobalState: UG
