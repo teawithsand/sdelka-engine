@@ -15,6 +15,7 @@ export enum IDBScopeDBWriteType {
     UNDO_BOUNDARY = 4,
     CARD_DELETE = 5,
     UNDO = 6,
+    DELETE_MARKED_AS_DELETED = 7,
 }
 
 export type IDBScopeDBQuery = {
@@ -36,6 +37,8 @@ export type IDBScopeDBQuery = {
 }))
 
 export type IDBScopeDBWrite<C, S> = {
+    history?: boolean
+} & ({
     type: IDBScopeDBWriteType.CARD_DATA,
     cardData: C,
 } | {
@@ -46,13 +49,18 @@ export type IDBScopeDBWrite<C, S> = {
     cardData: C,
     state: S,
 } | {
-    type: IDBScopeDBWriteType.UNDO_BOUNDARY
-} | {
     type: IDBScopeDBWriteType.CARD_DELETE,
     id: ID
 } | {
+    type: IDBScopeDBWriteType.UNDO_BOUNDARY
+    history?: undefined | false,
+}  | {
     type: IDBScopeDBWriteType.UNDO,
-}
+    history?: undefined | false,
+} | {
+    type: IDBScopeDBWriteType.DELETE_MARKED_AS_DELETED,
+    history?: undefined | false,
+})
 
 export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, IDBScopeDBQuery> {
 
@@ -137,6 +145,9 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
     }
 
     private handleCommand = async (command: IDBScopeDBWrite<C, S>) => {
+        // TODO(teawithsand): implement command.history handling
+        
+        const history = command.history ?? true
         if (command.type === IDBScopeDBWriteType.UNDO_BOUNDARY) {
             await this.db.history.where("scope").equals(this.scope).delete()
         } else if (command.type === IDBScopeDBWriteType.CARD_DATA) {
@@ -178,6 +189,16 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             await this.makeHistoryEntryForCard(command.id, ndctr, IDBDBHistoryEntryType.CARD_DELETION)
 
             await this.db.cards.where("[scope+id]").equals([this.scope, command.id]).delete()
+        } else if(command.type === IDBScopeDBWriteType.DELETE_MARKED_AS_DELETED) {
+            await this.getAndIncrementNDCTR()
+            // TODO(teawithsand): create history entry for that event OR document 
+            //  it somehow that it's not subject for undoing
+            await this.db.cards.where("[scope+deletedAt]").between(
+                [this.scope, 0],
+                [this.scope, MAX_IDB_KEY],
+                false,
+                true,
+            ).delete()
         } else {
             throw new Error(`Unsupported command: ${command}`)
         }
@@ -197,16 +218,6 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
         })
     }
 
-    private executeQuery = (query: IDBScopeDBQuery) => {
-        if (query.type === IDBScopeDBQueryType.BY_ID) {
-            return [
-
-            ]
-        } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
-            return query.groups.forEach
-        }
-    }
-
     querySingle = async (query: IDBScopeDBQuery): Promise<C | null> => {
         if (
             query.type === IDBScopeDBQueryType.BY_ID
@@ -217,15 +228,13 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                 .first())?.data ?? null
         } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
             const results: IDBDBCard<C>[] = []
-            const deletedAtMin = query.omitDeleted ? null : MIN_IDB_KEY
-            const deletedAtMax = query.omitDeleted ? null : MAX_IDB_KEY
             for (const group of query.groups) {
                 const partialQuery = this.db.cards
                     .where("[scope+deletedAt+group+priority]")
                     .between(
-                        [this.scope, deletedAtMin, group, MIN_IDB_KEY],
-                        [this.scope, deletedAtMax, group, MAX_IDB_KEY],
-                        true,
+                        [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, group, MIN_IDB_KEY],
+                        [this.scope, MAX_IDB_KEY, group, MAX_IDB_KEY],
+                        !query.omitDeleted,
                         true,
                     )
                 if (query.asc) {

@@ -15,8 +15,10 @@ export type IDBDBCardMetadata = {
     /**
      * When true, card is omitted in queries, which do not explicitly
      * specify that they are showing marked-as-deleted entries.
+     * 
+     * Assumed to be false, when it's equal to zero or less than zero.
      */
-    deletedAt: TimestampMs | null
+    deletedAt: TimestampMs
 
     /**
      * When was card last modified.
@@ -58,7 +60,11 @@ export type IDBDBState<S> = {
      */
     id: ID
 
+    /**
+     * Actual state stored, or null if it was not set yet.
+     */
     data: S | null
+
     /**
      * Complementary value used to maintain history.
      */
