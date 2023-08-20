@@ -1,3 +1,4 @@
+
 /**
  * Type, which can be used as IDB key.
  *
@@ -49,6 +50,14 @@ export const idbComparator = (a: IDBComparable, b: IDBComparable): number => {
 	throw new Error("Unreachable code")
 }
 
-export const MAX_IDB_KEY: IDBComparable = [[]]
-export const MIN_IDB_KEY: IDBComparable = -Infinity
+/**
+ * @deprecated This causes dexie to trigger weird serialization bug sometimes, however replacing
+ * it with new instance of [[]], which maxKey actually is, fixes it.
+ */
+export const MAX_IDB_KEY: IDBComparable = [[]] //Dexie.maxKey as IDBComparable
+export const MIN_IDB_KEY: IDBComparable = -Infinity //Dexie.minKey as IDBComparable
+
+export const maxIdbKey = (): IDBComparable => [[]]
+export const minIdbKey = () => MIN_IDB_KEY
+
 export const IDB_LIMIT_INF = 2**32 - 1
