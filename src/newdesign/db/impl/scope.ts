@@ -21,10 +21,7 @@ export enum IDBScopeDBWriteType {
 export type IDBScopeDBQuery = {
     type: IDBScopeDBQueryType.BY_ID,
     id: ID,
-} | ({
-    offset?: number
-    limit?: number
-} & ({
+} | {
     type: IDBScopeDBQueryType.BY_PRIORITY,
     omitDeleted: boolean,
     groups: IDBComparable[],
@@ -34,7 +31,7 @@ export type IDBScopeDBQuery = {
     omitDeleted: boolean,
     groups: IDBComparable[],
     asc: boolean
-}))
+}
 
 export type IDBScopeDBWrite<C, S> = {
     /**
@@ -139,6 +136,8 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
     private makeHistoryEntryForStateAndCard = async (id: ID, ndctr: number) => {
         const prevState = (await this.db.states.get(this.scope))?.data ?? null
         const prevCard = (await this.db.cards.get([this.scope, id]))?.data ?? null
+
+        // TODO(teawithsand): limit amount of history entries stored
         await this.db.history.put({
             type: IDBDBHistoryEntryType.CARD_AND_STATE_WRITE,
             previousState: prevState,
@@ -223,124 +222,140 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
         })
     }
 
-    querySingle = async (query: IDBScopeDBQuery): Promise<C | null> => {
-        return await this.db.transaction('rw?', [
-            this.db.cards,
-        ], async () => {
-            if (
-                query.type === IDBScopeDBQueryType.BY_ID
-            ) {
-                return (await this.db.cards
+    private translateQuery = (query: IDBScopeDBQuery) => {
+        if (
+            query.type === IDBScopeDBQueryType.BY_ID
+        ) {
+            return [
+                this.db.cards
                     .where("[scope+id]")
                     .equals([this.scope, query.id])
-                    .first())?.data ?? null
-            } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
+            ]
+        } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
+            return query.groups.map(group => query.omitDeleted ? this.db.cards
+                .where("[scope+deletedAt+group+priority]")
+                .between(
+                    [
+                        this.scope,
+                        0,
+                        group,
+                        minIdbKey()
+                    ],
+                    [
+                        this.scope,
+                        0,
+                        group,
+                        maxIdbKey()
+                    ],
+                    true,
+                    true,
+                ) : this.db.cards
+                    .where("[scope+group+priority]")
+                    .between(
+                        [
+                            this.scope,
+                            group,
+                            minIdbKey()
+                        ],
+                        [
+                            this.scope,
+                            group,
+                            maxIdbKey()
+                        ],
+                        true,
+                        true,
+                    ))
+        } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
+            // TODO(teawithsand): fix omitDeleted bug
+            return [
+                this.db.cards
+                    .where("[scope+deletedAt+lastModifiedAt]")
+                    .between(
+                        [this.scope, minIdbKey(), minIdbKey()],
+                        [this.scope, maxIdbKey(), maxIdbKey()],
+                        true,
+                        true,
+                    )
+            ]
+        } else {
+            throw new Error(`Unsupported query type: ${(query as any).type}`)
+        }
+    }
 
+    private performQuery = async (query: IDBScopeDBQuery, offset: number, limit: number): Promise<IDBDBCard<C>[]> => {
+        return await this.db.transaction("r?", [
+            this.db.cards
+        ], async () => {
+            const translatedQueries = this.translateQuery(query)
+            if (translatedQueries.length === 0) {
+                return []
+            } else if (query.type !== IDBScopeDBQueryType.BY_PRIORITY && translatedQueries.length === 1) {
+                const q = translatedQueries[0]
+                return await q
+                    .offset(offset)
+                    .limit(limit)
+                    .toArray()
+            } else {
+                if (offset !== 0 || limit !== 1) {
+                    throw new Error(`Offset and limit are not supported for multi-query translations`)
+                }
+
+                if (query.type === IDBScopeDBQueryType.BY_ID) {
+                    throw new Error(`Id queries may not yield multiple translated queries`)
+                }
+
+                const asc = query.asc
                 const results: IDBDBCard<C>[] = []
-                for (const group of query.groups) {
-                    const partialQuery = query.omitDeleted ? this.db.cards
-                        .where("[scope+deletedAt+group+priority]")
-                        .between(
-                            [
-                                this.scope,
-                                0,
-                                group,
-                                minIdbKey()
-                            ],
-                            [
-                                this.scope,
-                                0,
-                                group,
-                                maxIdbKey()
-                            ],
-                            true,
-                            true,
-                        ) : this.db.cards
-                            .where("[scope+group+priority]")
-                            .between(
-                                [
-                                    this.scope,
-                                    group,
-                                    minIdbKey()
-                                ],
-                                [
-                                    this.scope,
-                                    group,
-                                    maxIdbKey()
-                                ],
-                                true,
-                                true,
-                            )
-                            
-                    if (query.asc) {
-                        const res = await partialQuery.first()
+                for (const translatedQuery of translatedQueries) {
+                    if (asc) {
+                        const res = await translatedQuery.first()
                         if (res) results.push(res)
                     } else {
-                        const res = await partialQuery.last()
+                        const res = await translatedQuery.last()
                         if (res) results.push(res)
                     }
                 }
 
-                if (query.asc) {
+                if (asc) {
                     results.sort((a, b) => idbComparator(a.priority, b.priority))
                 } else {
                     results.sort((a, b) => -idbComparator(a.priority, b.priority))
                 }
+
                 if (results.length) {
-                    return results[0].data
+                    return [results[0]]
                 } else {
-                    return null
+                    return []
                 }
-            } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
-                // TODO(teawithsand): fix is-deleted bug here
-                const partial = this.db.cards
-                    .where("[scope+deletedAt+lastModifiedAt]")
-                    .between(
-                        [this.scope, query.omitDeleted ? 0 : minIdbKey(), minIdbKey()],
-                        [this.scope, maxIdbKey(), maxIdbKey()],
-                        !query.omitDeleted,
-                        true,
-                    )
-                if (query.asc) {
-                    return (await partial.first())?.data ?? null
-                } else {
-                    return (await partial.last())?.data ?? null
-                }
+            }
+        })
+    }
+
+    querySingle = async (query: IDBScopeDBQuery): Promise<C | null> => {
+        return await this.db.transaction('rw?', [
+            this.db.cards,
+        ], async () => {
+            const res = await this.performQuery(query, 0, 1)
+            if (res.length) {
+                return res[0].data
             } else {
-                throw new Error("NIY")
+                return null
             }
         })
     }
 
     queryMany = async (query: IDBScopeDBQuery): Promise<Cursor<C>> => {
-        const makeQuery = () => {
-            if (query.type === IDBScopeDBQueryType.BY_ID) {
-                return this.db.cards.where("id").equals(query.id)
-            } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
-                throw new Error("This query can't be launched against multiple entires")
-            } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
-                return this.db.cards
-                    .where("[scope+deletedAt+lastModifiedAt]")
-                    .between(
-                        [this.scope, query.omitDeleted ? 0 : minIdbKey(), minIdbKey()],
-                        [this.scope, maxIdbKey(), maxIdbKey()],
-                        !query.omitDeleted,
-                        true,
-                    )
-            } else {
-                throw new Error("NIY")
-            }
-        }
-
         return new AsyncCursor({
             fetch: async (offset, limit) => {
-                return (await makeQuery()
-                    .offset(offset)
-                    .limit(limit)
-                    .toArray()).map((c) => (c.data))
+                const results = await this.performQuery(query, offset, limit)
+                return results.map(v => v.data)
             },
             count: async () => {
-                return await makeQuery().count()
+                const translated = this.translateQuery(query)
+                if (translated.length === 0) return 0
+                if (translated.length === 1) return await translated[0].count()
+
+                throw new Error(`Multi-translated queries are not supported with cursor count method`)
             }
         })
     }
