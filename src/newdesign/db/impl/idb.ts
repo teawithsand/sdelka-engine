@@ -2,7 +2,6 @@ import Dexie, { Table } from "dexie"
 import { ID, IDBComparable } from "../../../util"
 import { TimestampMs } from "../../../internal"
 
-
 /**
  * All kinds of metadata derived from card data, which is processed by IDBDB.
  */
@@ -39,7 +38,7 @@ export type IDBDBCardMetadata = {
 /**
  * Extractor, which extracts IDBDBCardMetadata from card data.
  */
-export type IDBDBCardMetadataExtractor<C> = (cardData: C) => IDBDBCardMetadata
+export type IDBDBCardMetadataExtractor<C> = (data: C) => IDBDBCardMetadata
 
 /**
  * Card stored in IDBDB.
@@ -121,8 +120,7 @@ export class IDBDB<C, S> extends Dexie {
         this.version(1).stores({
             cards: "[scope+id], [scope+group+priority], [scope+deletedAt+group+priority], [scope+deletedAt+lastModifiedAt]",
             states: "id",
-            history:
-                "[scope+ndctr]",
+            history: "[scope+ndctr]",
         })
     }
 
