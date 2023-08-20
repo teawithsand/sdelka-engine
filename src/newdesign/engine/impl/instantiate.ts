@@ -16,24 +16,24 @@ export const DEFAULT_SM2_ENGINE_CONFIG: SM2EngineConfig = {
 
 	notDueCardPickStrategy: NotDueCardPickStrategy.DESIRED_PRESENTATION_TIMESTAMP,
 
-	skipLearningInterval: 1.25
-	skipLearningEaseFactor: number
+	skipLearningInterval: 1.25,
+    skipLearningEaseFactor: 2,
+    
+    initEaseFactor: 1.4,
+    minEaseFactor: 1.2,
+    maxEaseFactor: 4,
 
-	initEaseFactor: number
-	minEaseFactor: number
-	maxEaseFactor: number
+    hardEaseFactorDelta: 0.1,
+    easyEaseFactorDelta: 0.2,
+    lapEaseFactorDelta: 0.2,
 
-	hardEaseFactorDelta: number
-	easyEaseFactorDelta: number
-	lapEaseFactorDelta: number
+    maxInterval: 1000 * 60 * 60 * 24 * 365,
+    graduatedInterval: 1000 * 60 * 60 * 24,
+    relearnedInterval: 1000 * 60 * 60 * 24,
+    lapInterval: 1000 * 60,
 
-	maxInterval: TimeMs
-	graduatedInterval: TimeMs
-	relearnedInterval: TimeMs
-	lapInterval: TimeMs
-
-	learningSteps: TimeMs[]
-	relearningSteps: TimeMs[]
+    learningSteps: [1000 * 60, 1000 * 60 * 10],
+    relearningSteps: [1000 * 60, 1000 * 60 * 10],
 }
 
 export const makeSM2Engine = <CD>(
@@ -48,9 +48,7 @@ export const makeSM2Engine = <CD>(
         new IDBScopeDBEngineInitializer(
             db,
             {
-                config: {
-                    
-                },
+                config: DEFAULT_SM2_ENGINE_CONFIG,
                 dailyState: {
                     dayTimestamp: NaN,
                     learnedLimitDelta: 0,
