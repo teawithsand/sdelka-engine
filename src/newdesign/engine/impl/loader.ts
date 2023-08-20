@@ -5,21 +5,21 @@ import { SM2EngineStateUtil } from "./util";
 
 export class SM2IDBScopeDBEngineCardLoader<CD> implements EngineCardLoader<
     SM2EngineState,
-    SM2CardState,
-    CD
+    CD,
+    SM2CardState
 > {
     constructor(
         private readonly db: ScopeDB<
-            EngineCard<SM2CardState, CD>,
+            EngineCard<CD, SM2CardState>,
             SM2EnginePersistentState,
-            IDBScopeDBWrite<EngineCard<SM2CardState, CD>, SM2EnginePersistentState>,
+            IDBScopeDBWrite<EngineCard<CD, SM2CardState>, SM2EnginePersistentState>,
             IDBScopeDBQuery
         >,
     ) { }
 
     loadCardState = async (
         engineState: SM2EngineState,
-    ): Promise<EngineCard<SM2CardState, CD> | null> => {
+    ): Promise<EngineCard<CD, SM2CardState> | null> => {
         // TODO(teawithsand): implement NotDueCardPickStrategy here
 
         const now = engineState.now

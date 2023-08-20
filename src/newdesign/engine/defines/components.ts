@@ -5,23 +5,23 @@ export type CardStateTransitionResult<EG, CS> = {
     engineState: EG
 }
 
-export interface EngineStateTransition<EG, UA, CS, MSG> {
+export interface EngineStateTransition<ES, UA, CS, MSG> {
     transitionEngineCommand: (
-        engineState: EG,
+        engineState: ES,
         message: MSG
-    ) => EG
+    ) => ES
 
     transitionCardState: (
-        engineState: EG,
+        engineState: ES,
         userAnswer: UA,
         cardState: CS
-    ) => CardStateTransitionResult<EG, CS>
+    ) => CardStateTransitionResult<ES, CS>
 }
 
 export interface EngineSaver<EP, CS, CD> {
     saveEngineStateTransition: (persistentEngineState: EP) => Promise<void>
     saveStateCardTransitionResult: (
-        originalCard: EngineCard<CS, CD>,
+        originalCard: EngineCard<CD, CS>,
         transitionResult: CardStateTransitionResult<EP, CS>,
     ) => Promise<void>
     undo: () => Promise<void>
@@ -45,7 +45,7 @@ export interface EngineInitializer<EP> {
 /**
  * Component responsible for loading the topmost card.
  */
-export interface EngineCardLoader<ES, CS, CD> {
+export interface EngineCardLoader<ES, CD, CS> {
     /**
      * Loads whatever card is considered fittest by this loader.
      * 
@@ -53,7 +53,7 @@ export interface EngineCardLoader<ES, CS, CD> {
      */
     loadCardState: (
         engineState: ES,
-    ) => Promise<EngineCard<CS, CD> | null>
+    ) => Promise<EngineCard<CD, CS> | null>
 }
 
 /**

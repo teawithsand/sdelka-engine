@@ -8,9 +8,9 @@ import { CardStateTransitionResult, EngineCard, EngineSaver } from "../defines";
 export class IDBScopeDBEngineSaver<EP, CS, CD> implements EngineSaver<EP, CS, CD> {
     constructor(
         private readonly db: ScopeDB<
-            EngineCard<CS, CD>,
+            EngineCard<CD, CS>,
             EP,
-            IDBScopeDBWrite<EngineCard<CS, CD>, EP>,
+            IDBScopeDBWrite<EngineCard<CD, CS>, EP>,
             IDBScopeDBQuery
         >,
     ) { }
@@ -23,7 +23,7 @@ export class IDBScopeDBEngineSaver<EP, CS, CD> implements EngineSaver<EP, CS, CD
     }
 
     saveStateCardTransitionResult = async (
-        originalCard: EngineCard<CS, CD>,
+        originalCard: EngineCard<CD, CS>,
         transitionResult: CardStateTransitionResult<EP, CS>
     ) => {
         await this.db.write([

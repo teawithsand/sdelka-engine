@@ -1,6 +1,6 @@
 import { ScopeDB } from "../../db/defines";
 import { IDBScopeDBQuery, IDBScopeDBWrite } from "../../db/impl";
-import { EngineCard, EngineImpl, NotDueCardPickStrategy, SM2CardState, SM2EngineConfig, SM2EnginePersistentState } from "../defines";
+import { Engine, EngineCard, EngineImpl, NotDueCardPickStrategy, SM2CardState, SM2EngineAnswer, SM2EngineConfig, SM2EngineMessage, SM2EnginePersistentState, SM2EngineState, SM2Statistics, SM2UserState } from "../defines";
 import { IDBScopeDBEngineInitializer } from "./initializer";
 import { SM2IDBScopeDBEngineCardLoader } from "./loader";
 import { SM2EngineStateManager } from "./manager";
@@ -38,12 +38,12 @@ export const DEFAULT_SM2_ENGINE_CONFIG: SM2EngineConfig = {
 
 export const makeSM2Engine = <CD>(
     db: ScopeDB<
-        EngineCard<SM2CardState, CD>,
+        EngineCard<CD, SM2CardState>,
         SM2EnginePersistentState,
-        IDBScopeDBWrite<EngineCard<SM2CardState, CD>, SM2EnginePersistentState>,
+        IDBScopeDBWrite<EngineCard<CD, SM2CardState>, SM2EnginePersistentState>,
         IDBScopeDBQuery
     >
-) => {
+): Engine<SM2UserState, SM2EngineAnswer, CD, SM2CardState, SM2EngineMessage, SM2Statistics> => {
     return new EngineImpl(
         new IDBScopeDBEngineInitializer(
             db,
@@ -62,7 +62,7 @@ export const makeSM2Engine = <CD>(
         new IDBScopeDBEngineSaver<SM2EnginePersistentState, SM2CardState, CD>(
             db,
         ),
-        new SM2IDBScopeDBEngineCardLoader(
+        new SM2IDBScopeDBEngineCardLoader<CD>(
             db,
         ),
         new SM2EngineStatsLoader(),

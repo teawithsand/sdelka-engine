@@ -5,9 +5,9 @@ import { EngineCardLoader, EngineInitializer, EngineSaver, EngineStateManager, E
  * Handle, which represents card selected by card loader with possibility of giving an answer
  * to that query.
  */
-export interface EngineCardHandle<UA, CS, CD> {
+export interface EngineCardHandle<UA, CD, CS> {
     readonly isClosed: boolean
-    readonly card: EngineCard<CS, CD>
+    readonly card: EngineCard<CD, CS>
 
     answerAndSave: (userAnswer: UA) => Promise<void>
 }
@@ -16,7 +16,7 @@ export interface EngineCardHandle<UA, CS, CD> {
  * End-user interface for whatever engine is used.
  */
 export interface Engine<UG, UA, CD, CS, MSG, ST> {
-    getCard: (userGlobalState: UG) => Promise<EngineCardHandle<UA, CS, CD> | null>
+    getCard: (userGlobalState: UG) => Promise<EngineCardHandle<UA, CD, CS> | null>
     passMessage: (userGlobalState: UG, msg: MSG) => Promise<void>
     undo: () => Promise<void>
     getStatistics: (userGlobalState: UG) => Promise<ST>
@@ -29,7 +29,7 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
         private readonly initializer: EngineInitializer<EP>,
         private readonly stateTransition: EngineStateTransition<ES, UA, CS, MSG>,
         private readonly saver: EngineSaver<EP, CS, CD>,
-        private readonly loader: EngineCardLoader<ES, CS, CD>,
+        private readonly loader: EngineCardLoader<ES, CD, CS>,
         private readonly stats: EngineStatsLoader<ES, ST>,
         private readonly manager: EngineStateManager<ES, EP, UG>,
     ) { }
@@ -42,7 +42,7 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
         return this.persistentEngineState
     }
 
-    getCard = async (userGlobalState: UG): Promise<EngineCardHandle<UA, CS, CD> | null> => {
+    getCard = async (userGlobalState: UG): Promise<EngineCardHandle<UA, CD, CS> | null> => {
         const enginePersistentState = await this.getEnginePersistentState()
         const engineState = this.manager.getEngineState(enginePersistentState, userGlobalState)
 
