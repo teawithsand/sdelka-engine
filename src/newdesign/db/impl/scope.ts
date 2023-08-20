@@ -1,4 +1,4 @@
-import { AsyncCursor, Cursor, ID, MAX_IDB_KEY, MIN_IDB_KEY, idbComparator } from "../../../util"
+import { AsyncCursor, Cursor, ID, IDBComparable, MAX_IDB_KEY, MIN_IDB_KEY, idbComparator, maxIdbKey, minIdbKey } from "../../../util"
 import { ScopeDB } from "../defines"
 import { IDBDB, IDBDBCard, IDBDBHistoryEntryType, IDBDBState } from "./idb"
 
@@ -27,12 +27,12 @@ export type IDBScopeDBQuery = {
 } & ({
     type: IDBScopeDBQueryType.BY_PRIORITY,
     omitDeleted: boolean,
-    groups: ID[],
+    groups: IDBComparable[],
     asc: boolean
 } | {
     type: IDBScopeDBQueryType.BY_LAST_MODIFIED,
     omitDeleted: boolean,
-    groups: ID[],
+    groups: IDBComparable[],
     asc: boolean
 }))
 
@@ -155,9 +155,10 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             const ndctr = await this.getAndIncrementNDCTR()
             await this.makeHistoryEntryForCard(metadata.id, ndctr)
             await this.db.cards.put({
+                ...metadata,
+
                 data: command.cardData,
                 scope: this.scope,
-                ...metadata,
                 lastModifiedNdctr: ndctr,
             })
         } else if (command.type === IDBScopeDBWriteType.STATE) {
@@ -219,61 +220,92 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
     }
 
     querySingle = async (query: IDBScopeDBQuery): Promise<C | null> => {
-        if (
-            query.type === IDBScopeDBQueryType.BY_ID
-        ) {
-            return (await this.db.cards
-                .where("[scope+id]")
-                .equals([this.scope, query.id])
-                .first())?.data ?? null
-        } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
-            const results: IDBDBCard<C>[] = []
-            for (const group of query.groups) {
-                const partialQuery = this.db.cards
-                    .where("[scope+deletedAt+group+priority]")
+        return await this.db.transaction('rw?', [
+            this.db.cards,
+        ], async () => {
+            if (
+                query.type === IDBScopeDBQueryType.BY_ID
+            ) {
+                return (await this.db.cards
+                    .where("[scope+id]")
+                    .equals([this.scope, query.id])
+                    .first())?.data ?? null
+            } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
+
+                const results: IDBDBCard<C>[] = []
+                for (const group of query.groups) {
+                    const partialQuery = query.omitDeleted ? this.db.cards
+                        .where("[scope+deletedAt+group+priority]")
+                        .between(
+                            [
+                                this.scope,
+                                0,
+                                group,
+                                MIN_IDB_KEY
+                            ],
+                            [
+                                this.scope,
+                                0,
+                                group,
+                                maxIdbKey()
+                            ],
+                            true,
+                            true,
+                        ) : this.db.cards
+                            .where("[scope+group+priority]")
+                            .between(
+                                [
+                                    this.scope,
+                                    group,
+                                    MIN_IDB_KEY
+                                ],
+                                [
+                                    this.scope,
+                                    group,
+                                    maxIdbKey()
+                                ],
+                                true,
+                                true,
+                            )
+                            
+                    if (query.asc) {
+                        const res = await partialQuery.first()
+                        if (res) results.push(res)
+                    } else {
+                        const res = await partialQuery.last()
+                        if (res) results.push(res)
+                    }
+                }
+
+                if (query.asc) {
+                    results.sort((a, b) => idbComparator(a.priority, b.priority))
+                } else {
+                    results.sort((a, b) => -idbComparator(a.priority, b.priority))
+                }
+                if (results.length) {
+                    return results[0].data
+                } else {
+                    return null
+                }
+            } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
+                // TODO(teawithsand): fix is-deleted bug here
+                const partial = this.db.cards
+                    .where("[scope+deletedAt+lastModifiedAt]")
                     .between(
-                        [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, group, MIN_IDB_KEY],
-                        [this.scope, MAX_IDB_KEY, group, MAX_IDB_KEY],
+                        [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, MIN_IDB_KEY],
+                        [this.scope, MAX_IDB_KEY, MAX_IDB_KEY],
                         !query.omitDeleted,
                         true,
                     )
                 if (query.asc) {
-                    const res = await partialQuery.first()
-                    if (res) results.push(res)
+                    return (await partial.first())?.data ?? null
                 } else {
-                    const res = await partialQuery.last()
-                    if (res) results.push(res)
+                    return (await partial.last())?.data ?? null
                 }
-            }
-
-            if (query.asc) {
-                results.sort((a, b) => idbComparator(a.priority, b.priority))
             } else {
-                results.sort((a, b) => -idbComparator(a.priority, b.priority))
+                throw new Error("NIY")
             }
-
-            if (results.length) {
-                return results[0].data
-            } else {
-                return null
-            }
-        } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
-            const partial = this.db.cards
-                .where("[scope+deletedAt+lastModifiedAt]")
-                .between(
-                    [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, MIN_IDB_KEY],
-                    [this.scope, MAX_IDB_KEY, MAX_IDB_KEY],
-                    !query.omitDeleted,
-                    true,
-                )
-            if (query.asc) {
-                return (await partial.first())?.data ?? null
-            } else {
-                return (await partial.last())?.data ?? null
-            }
-        } else {
-            throw new Error("NIY")
-        }
+        })
     }
 
     queryMany = async (query: IDBScopeDBQuery): Promise<Cursor<C>> => {
@@ -287,7 +319,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                     .where("[scope+deletedAt+lastModifiedAt]")
                     .between(
                         [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, MIN_IDB_KEY],
-                        [this.scope, MAX_IDB_KEY, MAX_IDB_KEY],
+                        [this.scope, maxIdbKey(), maxIdbKey()],
                         !query.omitDeleted,
                         true,
                     )

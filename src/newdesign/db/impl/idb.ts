@@ -28,7 +28,7 @@ export type IDBDBCardMetadata = {
     /**
      * Group this card is in. Can be used to filter cards.
      */
-    group: ID,
+    group: IDBComparable,
 
     /**
      * Priority this card has. Used for priority queries.
@@ -119,10 +119,18 @@ export class IDBDB<C, S> extends Dexie {
     ) {
         super(name)
         this.version(1).stores({
-            cards: "[scope+id], [scope+deletedAt+group+priority], [scope+deletedAt+lastModifiedAt]",
+            cards: "[scope+id], [scope+group+priority], [scope+deletedAt+group+priority], [scope+deletedAt+lastModifiedAt]",
             states: "id",
-            historyEntries:
+            history:
                 "[scope+ndctr]",
+        })
+    }
+
+    clear = async () => {
+        await this.transaction("rw?", [this.cards, this.states, this.history], async () => {
+            await this.cards.clear()
+            await this.states.clear()
+            await this.history.clear()
         })
     }
 }
