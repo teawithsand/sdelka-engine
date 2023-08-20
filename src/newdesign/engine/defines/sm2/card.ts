@@ -61,3 +61,12 @@ export const extractSM2CardStatePriority = (state: SM2CardState): IDBComparable[
         return [state.desiredPresentationTimestamp]
     }
 }
+
+/**
+ * Initializes SM2 card state for new cards.
+ * 
+ * @returns SM2 card state suitable for use in new cards.
+ */
+export const initializeSM2CardState = (): SM2CardState => ({
+	type: SM2CardStateType.NEW,
+})
