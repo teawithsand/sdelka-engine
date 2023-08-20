@@ -13,8 +13,6 @@ export type SM2CardState = {
 } & (
 	| {
 			type: SM2CardStateType.NEW
-			ordinalNumber: IDBComparable
-			userPriority: IDBComparable
 	  }
 	| ({
 			desiredPresentationTimestamp: TimestampMs
@@ -49,3 +47,17 @@ export type SM2CardState = {
 					))
 	  ))
 )
+
+/**
+ * Extracts priority value of SM2CardState. Should be used as part of IDBDBCardMetadataExtractor.
+ * It can be extended, so that custom user priority factors may be added with `.push` on resulting array.
+ * 
+ * It should be noted. Please note that priority for cards other than new one should not be overridden.
+ */
+export const extractSM2CardStatePriority = (state: SM2CardState): IDBComparable[] => {
+	if (state.type === SM2CardStateType.NEW) {	
+		return []
+    } else {
+        return [state.desiredPresentationTimestamp]
+    }
+}
