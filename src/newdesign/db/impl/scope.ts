@@ -1,4 +1,4 @@
-import { AsyncCursor, Cursor, ID, IDBComparable, MAX_IDB_KEY, MIN_IDB_KEY, idbComparator, maxIdbKey, minIdbKey } from "../../../util"
+import { AsyncCursor, Cursor, ID, IDBComparable, idbComparator, maxIdbKey, minIdbKey } from "../../../util"
 import { ScopeDB } from "../defines"
 import { IDBDB, IDBDBCard, IDBDBHistoryEntryType, IDBDBState } from "./idb"
 
@@ -37,6 +37,10 @@ export type IDBScopeDBQuery = {
 }))
 
 export type IDBScopeDBWrite<C, S> = {
+    /**
+     * When true, entry will be stored in history log.
+     * Ignored when it's false.
+     */
     history?: boolean
 } & ({
     type: IDBScopeDBWriteType.CARD_DATA,
@@ -196,7 +200,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             //  it somehow that it's not subject for undoing
             await this.db.cards.where("[scope+deletedAt]").between(
                 [this.scope, 0],
-                [this.scope, MAX_IDB_KEY],
+                [this.scope, maxIdbKey()],
                 false,
                 true,
             ).delete()
@@ -241,7 +245,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                                 this.scope,
                                 0,
                                 group,
-                                MIN_IDB_KEY
+                                minIdbKey()
                             ],
                             [
                                 this.scope,
@@ -257,7 +261,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                                 [
                                     this.scope,
                                     group,
-                                    MIN_IDB_KEY
+                                    minIdbKey()
                                 ],
                                 [
                                     this.scope,
@@ -292,8 +296,8 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                 const partial = this.db.cards
                     .where("[scope+deletedAt+lastModifiedAt]")
                     .between(
-                        [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, MIN_IDB_KEY],
-                        [this.scope, MAX_IDB_KEY, MAX_IDB_KEY],
+                        [this.scope, query.omitDeleted ? 0 : minIdbKey(), minIdbKey()],
+                        [this.scope, maxIdbKey(), maxIdbKey()],
                         !query.omitDeleted,
                         true,
                     )
@@ -318,7 +322,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                 return this.db.cards
                     .where("[scope+deletedAt+lastModifiedAt]")
                     .between(
-                        [this.scope, query.omitDeleted ? 0 : MIN_IDB_KEY, MIN_IDB_KEY],
+                        [this.scope, query.omitDeleted ? 0 : minIdbKey(), minIdbKey()],
                         [this.scope, maxIdbKey(), maxIdbKey()],
                         !query.omitDeleted,
                         true,
