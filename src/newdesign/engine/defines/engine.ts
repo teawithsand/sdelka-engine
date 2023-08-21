@@ -35,7 +35,7 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
         private readonly manager: EngineStateManager<ES, EP, UG>,
     ) { }
 
-    private getEnginePersistentState = async (): Promise<EP> => {
+    private innerGetEnginePersistentState = async (): Promise<EP> => {
         if (this.persistentEngineState === null) {
             this.persistentEngineState = await this.initializer.loadEngineGlobalState()
         }
@@ -43,8 +43,16 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
         return this.persistentEngineState
     }
 
+    getPersistentEngineState = this.innerGetEnginePersistentState
+
+    getEngineState = async (userGlobalState: UG): Promise<ES> => {
+        const enginePersistentState = await this.innerGetEnginePersistentState()
+        const engineState = this.manager.getEngineState(enginePersistentState, userGlobalState)
+        return engineState
+    }
+
     getCard = async (userGlobalState: UG): Promise<EngineCardHandle<UA, CD, CS> | null> => {
-        const enginePersistentState = await this.getEnginePersistentState()
+        const enginePersistentState = await this.innerGetEnginePersistentState()
         const engineState = this.manager.getEngineState(enginePersistentState, userGlobalState)
 
         const card = await this.loader.loadCardState(engineState)
@@ -87,7 +95,7 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
                         data: card.data,
                         state: result.cardState,
                     }
-                    
+
                     this.persistentEngineState = newPersistentEngineState
 
                     return {
@@ -102,7 +110,7 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
     }
 
     passMessage = async (userGlobalState: UG, message: MSG): Promise<void> => {
-        const enginePersistentState = await this.getEnginePersistentState()
+        const enginePersistentState = await this.innerGetEnginePersistentState()
         const engineState = this.manager.getEngineState(enginePersistentState, userGlobalState)
 
         const newEngineGlobalState = this.stateTransition.transitionEngineCommand(
@@ -122,7 +130,7 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
 
     getStatistics = async (userGlobalState: UG): Promise<ST> => {
         return await this.stats.getStatistics(
-            this.manager.getEngineState(await this.getEnginePersistentState(), userGlobalState),
+            this.manager.getEngineState(await this.innerGetEnginePersistentState(), userGlobalState),
         )
     }
 }
