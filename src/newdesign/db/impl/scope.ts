@@ -1,3 +1,4 @@
+import { IndexableType } from "dexie"
 import { AsyncCursor, Cursor, ID, IDBComparable, idbComparator, maxIdbKey, minIdbKey } from "../../../util"
 import { ScopeDB } from "../defines"
 import { IDBDB, IDBDBCard, IDBDBHistoryEntryType, IDBDBState } from "./idb"
@@ -277,6 +278,10 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             } else {
                 throw new Error(`Unsupported history entry tpe: ${(entry as any).type}`)
             }
+
+            await this.db.history.where("[scope+ndctr]").equals(
+                [entry.scope, entry.ndctr] as IndexableType
+            ).delete()
         } else {
             throw new Error(`Unsupported command: ${(command as any).type}`)
         }
