@@ -31,6 +31,14 @@ export class SM2EngineStateTransition implements EngineStateTransition<
             userAnswer,
         )
 
+        engineGlobalState = produce(engineGlobalState, draft => {
+            if (cardState.type === SM2CardStateType.NEW) {
+                draft.dailyState.processedNewCount += 1
+            } else if (cardState.type === SM2CardStateType.LEARNED) {
+                draft.dailyState.processedLearnedCount += 1
+            }
+        })
+
         return {
             cardState: state,
             engineState: engineGlobalState,
