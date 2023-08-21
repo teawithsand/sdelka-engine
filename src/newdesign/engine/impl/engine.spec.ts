@@ -107,12 +107,43 @@ describe("SM2 engine", () => {
         const state: SM2UserState = {
             now: 1000 as TimestampMs,
         }
-        
-        for(;;) {
+
+        for (; ;) {
             const handle = await engine.getCard(state)
-            if(!handle) break
+            if (!handle) break
 
             await handle.answerAndSave(answer)
+        }
+    })
+
+    it("can go through all cards for today with easy answers and undo it all", async () => {
+        const state: SM2UserState = {
+            now: 1000 as TimestampMs,
+        }
+
+        const localCards = []
+        for (var i = 0; ; i++) {
+            const handle = await engine.getCard(state)
+            if (!handle) break
+
+            localCards.push(
+                await handle.answerAndSave(SM2EngineAnswer.EASY)
+            )
+        }
+
+        for (let j = i; j >= 0; j--) {
+            await engine.undo()
+        }
+
+        for(const lc of localCards) {
+            expect(lc.state.type).toEqual(SM2CardStateType.LEARNED)
+
+            const storedCard = await sdb.querySingle({
+                type: IDBScopeDBQueryType.BY_ID,
+                id: lc.data.id,
+            })
+
+            expect(storedCard?.state.type).toEqual(SM2CardStateType.NEW)
         }
     })
 })
