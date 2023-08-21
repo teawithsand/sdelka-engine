@@ -121,7 +121,7 @@ export class IDBDB<C, S> extends Dexie {
     ) {
         super(name)
         this.version(1).stores({
-            cards: "[scope+id], [scope+group+priority], [scope+deletedAt+group+priority], [scope+deletedAt+lastModifiedAt]",
+            cards: "[scope+id], [scope+priority], [scope+deletedAt+priority], [scope+group+priority], [scope+deletedAt+group+priority], [scope+deletedAt+lastModifiedAt]",
             states: "id",
             history: "[scope+ndctr]",
         })

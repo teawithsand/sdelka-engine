@@ -311,6 +311,40 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                     .equals([this.scope, query.id])
             ]
         } else if (query.type === IDBScopeDBQueryType.BY_PRIORITY) {
+            if (query.groups.length === 0) {
+                return [
+                    query.omitDeleted ? this.db.cards
+                        .where("[scope+deletedAt+priority]")
+                        .between(
+                            [
+                                this.scope,
+                                0,
+                                minIdbKey()
+                            ],
+                            [
+                                this.scope,
+                                0,
+                                maxIdbKey()
+                            ],
+                            true,
+                            true,
+                        ) : this.db.cards
+                            .where("[scope+priority]")
+                            .between(
+                                [
+                                    this.scope,
+                                    minIdbKey()
+                                ],
+                                [
+                                    this.scope,
+                                    maxIdbKey()
+                                ],
+                                true,
+                                true,
+                            )
+                ].map(q => query.asc ? q : q.reverse())
+            }
+
             return query.groups.map(group => query.omitDeleted ? this.db.cards
                 .where("[scope+deletedAt+group+priority]")
                 .between(
