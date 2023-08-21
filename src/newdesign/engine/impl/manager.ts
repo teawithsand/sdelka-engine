@@ -8,14 +8,15 @@ export class SM2EngineStateManager implements EngineStateManager<SM2EngineState,
         const now = userGlobalState.now
         const dayTimestamp = Math.max(
             0,
-            Math.floor((now + enginePersistentState.config.newDayDelta) / (24 * 3600 * 1000)),
+            Math.floor((now + enginePersistentState.config.newDayDelta) / (24 * 60 * 60 * 1000)),
         )
-        
+
         return {
             now: now,
             config: enginePersistentState.config,
             dailyState: enginePersistentState.dailyState.dayTimestamp === dayTimestamp ?
-                enginePersistentState.dailyState : {
+                enginePersistentState.dailyState :
+                {
                     dayTimestamp: dayTimestamp,
                     learnedLimitDelta: 0,
                     newLimitDelta: 0,
