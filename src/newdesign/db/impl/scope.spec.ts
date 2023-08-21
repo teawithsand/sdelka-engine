@@ -146,7 +146,7 @@ describe("IDBDB", () => {
                 const res = await cursor.toArray()
 
                 const localCards = [...cards]
-                localCards.sort((a, b) => a.lastModifiedAt - b.lastModifiedAt)
+                localCards.sort((a, b) => asc ? a.lastModifiedAt - b.lastModifiedAt : b.lastModifiedAt - a.lastModifiedAt)
                 expect(res).toEqual(localCards)
             }
         }

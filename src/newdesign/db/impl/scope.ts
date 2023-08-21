@@ -344,6 +344,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                         true,
                         true,
                     ))
+                .map(q => query.asc ? q : q.reverse())
         } else if (query.type === IDBScopeDBQueryType.BY_LAST_MODIFIED) {
             // TODO(teawithsand): fix omitDeleted bug
             return [
@@ -355,7 +356,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                         true,
                         true,
                     )
-            ]
+            ].map(q => query.asc ? q : q.reverse())
         } else {
             throw new Error(`Unsupported query type: ${(query as any).type}`)
         }
@@ -368,7 +369,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             const translatedQueries = this.translateQuery(query)
             if (translatedQueries.length === 0) {
                 return []
-            } else if (query.type !== IDBScopeDBQueryType.BY_PRIORITY && translatedQueries.length === 1) {
+            } else if (translatedQueries.length === 1) {
                 const q = translatedQueries[0]
                 return await q
                     .offset(offset)
@@ -386,13 +387,8 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                 const asc = query.asc
                 const results: IDBDBCard<C>[] = []
                 for (const translatedQuery of translatedQueries) {
-                    if (asc) {
-                        const res = await translatedQuery.first()
-                        if (res) results.push(res)
-                    } else {
-                        const res = await translatedQuery.last()
-                        if (res) results.push(res)
-                    }
+                    const res = await translatedQuery.first()
+                    if (res) results.push(res)
                 }
 
                 if (asc) {
