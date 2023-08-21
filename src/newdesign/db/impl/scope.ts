@@ -44,11 +44,11 @@ export type IDBScopeDBWrite<C, S> = {
     cardData: C,
 } | {
     type: IDBScopeDBWriteType.STATE,
-    state: S,
+    state: S | null,
 } | {
     type: IDBScopeDBWriteType.CARD_DATA_AND_STATE,
     cardData: C,
-    state: S,
+    state: S | null,
 } | {
     type: IDBScopeDBWriteType.CARD_DELETE,
     id: ID
@@ -114,13 +114,25 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
         ndctr: number,
         type: IDBDBHistoryEntryType.CARD_WRITE | IDBDBHistoryEntryType.CARD_DELETION = IDBDBHistoryEntryType.CARD_WRITE,
     ) => {
-        const prevCard = (await this.db.cards.get([this.scope, id]))?.data ?? null
-        await this.db.history.put({
-            type,
-            previousCardData: prevCard,
-            ndctr: ndctr,
-            scope: this.scope,
-        })
+        const prevCard: C | null = (await this.db.cards.get([this.scope, id]))?.data ?? null
+        if (type === IDBDBHistoryEntryType.CARD_DELETION) {
+            if (!prevCard) return
+            await this.db.history.put({
+                type: IDBDBHistoryEntryType.CARD_DELETION,
+                previousCardData: prevCard,
+                ndctr: ndctr,
+                scope: this.scope,
+            })
+        } else {
+            await this.db.history.put({
+                type,
+                previousCardData: prevCard,
+                previousCardId: id,
+                ndctr: ndctr,
+                scope: this.scope,
+            })
+        }
+
     }
 
     private makeHistoryEntryForState = async (ndctr: number) => {
@@ -144,6 +156,7 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             previousCardData: prevCard,
             ndctr: ndctr,
             scope: this.scope,
+            previousCardId: id,
         })
     }
 
@@ -156,7 +169,9 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
         } else if (command.type === IDBScopeDBWriteType.CARD_DATA) {
             const metadata = this.db.cardMetadataExtractor(command.cardData)
             const ndctr = await this.getAndIncrementNDCTR()
-            await this.makeHistoryEntryForCard(metadata.id, ndctr)
+            if (history) {
+                await this.makeHistoryEntryForCard(metadata.id, ndctr)
+            }
             await this.db.cards.put({
                 ...metadata,
 
@@ -166,7 +181,9 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
             })
         } else if (command.type === IDBScopeDBWriteType.STATE) {
             const ndctr = await this.getAndIncrementNDCTR()
-            await this.makeHistoryEntryForState(ndctr)
+            if (history) {
+                await this.makeHistoryEntryForState(ndctr)
+            }
             await this.db.states.put({
                 id: this.scope,
                 data: command.state,
@@ -175,7 +192,9 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
         } else if (command.type == IDBScopeDBWriteType.CARD_DATA_AND_STATE) {
             const metadata = this.db.cardMetadataExtractor(command.cardData)
             const ndctr = await this.getAndIncrementNDCTR()
-            await this.makeHistoryEntryForStateAndCard(metadata.id, ndctr)
+            if (history) {
+                await this.makeHistoryEntryForStateAndCard(metadata.id, ndctr)
+            }
 
             await this.db.cards.put({
                 data: command.cardData,
@@ -189,8 +208,10 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                 ndctr: ndctr, // does not matter; will be fixed by flush
             })
         } else if (command.type === IDBScopeDBWriteType.CARD_DELETE) {
-            const ndctr = await this.getAndIncrementNDCTR()
-            await this.makeHistoryEntryForCard(command.id, ndctr, IDBDBHistoryEntryType.CARD_DELETION)
+            if (history) {
+                const ndctr = await this.getAndIncrementNDCTR()
+                await this.makeHistoryEntryForCard(command.id, ndctr, IDBDBHistoryEntryType.CARD_DELETION)
+            }
 
             await this.db.cards.where("[scope+id]").equals([this.scope, command.id]).delete()
         } else if (command.type === IDBScopeDBWriteType.DELETE_MARKED_AS_DELETED) {
@@ -203,8 +224,61 @@ export class IDBScopeDB<C, S> implements ScopeDB<C, S, IDBScopeDBWrite<C, S>, ID
                 false,
                 true,
             ).delete()
+        } else if (command.type === IDBScopeDBWriteType.UNDO) {
+            const entry = await this.db.history.where("[scope+ndctr]").between(
+                [this.scope, minIdbKey()],
+                [this.scope, maxIdbKey()],
+                true,
+                true,
+            ).last()
+
+            if (!entry) return
+            if (entry.type === IDBDBHistoryEntryType.CARD_AND_STATE_WRITE) {
+                if (entry.previousCardData) {
+                    await this.handleCommand({
+                        type: IDBScopeDBWriteType.CARD_DATA_AND_STATE,
+                        cardData: entry.previousCardData,
+                        state: entry.previousState,
+                        history: false,
+                    })
+                } else {
+                    await this.handleCommand({
+                        type: IDBScopeDBWriteType.CARD_DELETE,
+                        id: entry.previousCardId,
+                        history: false,
+                    })
+                }
+            } else if (entry.type === IDBDBHistoryEntryType.CARD_DELETION) {
+                await this.handleCommand({
+                    type: IDBScopeDBWriteType.CARD_DATA,
+                    cardData: entry.previousCardData,
+                    history: false,
+                })
+            } else if (entry.type === IDBDBHistoryEntryType.STATE_WRITE) {
+                await this.handleCommand({
+                    type: IDBScopeDBWriteType.STATE,
+                    state: entry.previousState,
+                    history: false,
+                })
+            } else if (entry.type === IDBDBHistoryEntryType.CARD_WRITE) {
+                if (entry.previousCardData) {
+                    await this.handleCommand({
+                        type: IDBScopeDBWriteType.CARD_DATA,
+                        cardData: entry.previousCardData,
+                        history: false,
+                    })
+                } else {
+                    await this.handleCommand({
+                        type: IDBScopeDBWriteType.CARD_DELETE,
+                        id: entry.previousCardId,
+                        history: false,
+                    })
+                }
+            } else {
+                throw new Error(`Unsupported history entry tpe: ${(entry as any).type}`)
+            }
         } else {
-            throw new Error(`Unsupported command: ${command}`)
+            throw new Error(`Unsupported command: ${(command as any).type}`)
         }
     }
 

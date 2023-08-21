@@ -92,13 +92,16 @@ export type IDBDBHistoryEntry<C, S> = ({
     previousState: S | null
 } | {
     type: IDBDBHistoryEntryType.CARD_WRITE,
+    previousCardId: ID, // required when card data is null
     previousCardData: C | null,
 } | {
     type: IDBDBHistoryEntryType.CARD_AND_STATE_WRITE,
+    previousCardId: ID, // required when card data is null
     previousCardData: C | null,
     previousState: S | null,
 } | {
     type: IDBDBHistoryEntryType.CARD_DELETION,
+    previousCardData: C,
 })
 
 /**
