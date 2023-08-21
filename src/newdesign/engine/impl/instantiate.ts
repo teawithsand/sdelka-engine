@@ -16,7 +16,7 @@ export const DEFAULT_SM2_ENGINE_CONFIG: SM2EngineConfig = {
 
 	notDueCardPickStrategy: NotDueCardPickStrategy.DESIRED_PRESENTATION_TIMESTAMP,
 
-	skipLearningInterval: 1.25,
+
     skipLearningEaseFactor: 2,
     
     initEaseFactor: 1.4,
@@ -27,7 +27,8 @@ export const DEFAULT_SM2_ENGINE_CONFIG: SM2EngineConfig = {
     easyEaseFactorDelta: 0.2,
     lapEaseFactorDelta: 0.2,
 
-    maxInterval: 1000 * 60 * 60 * 24 * 365,
+    maxInterval: 1000 * 60 * 60 * 24 * 365 * 10,
+    skipLearningInterval: 1000 * 60 * 60 * 24 * 4,
     graduatedInterval: 1000 * 60 * 60 * 24,
     relearnedInterval: 1000 * 60 * 60 * 24,
     lapInterval: 1000 * 60,
