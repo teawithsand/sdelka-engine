@@ -8,8 +8,9 @@ import { EngineCardLoader, EngineInitializer, EngineSaver, EngineStateManager, E
 export interface EngineCardHandle<UA, CD, CS> {
     readonly isClosed: boolean
     readonly card: EngineCard<CD, CS>
+    readonly processedCard: EngineCard<CD, CS> | null
 
-    answerAndSave: (userAnswer: UA) => Promise<void>
+    answerAndSave: (userAnswer: UA) => Promise<EngineCard<CD, CS>>
 }
 
 /**
@@ -53,10 +54,14 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
         }
 
         let isClosed = false
+        let processedCard: EngineCard<CD, CS> | null = null
         return {
             card,
             get isClosed() {
                 return isClosed
+            },
+            get processedCard() {
+                return processedCard
             },
             answerAndSave: async (userAnswer) => {
                 if (isClosed) {
@@ -78,7 +83,17 @@ export class EngineImpl<ES, EP, UG, UA, CD, CS, MSG, ST> implements Engine<UG, U
                             engineState: newPersistentEngineState,
                         },
                     )
+                    processedCard = {
+                        data: card.data,
+                        state: result.cardState,
+                    }
+                    
                     this.persistentEngineState = newPersistentEngineState
+
+                    return {
+                        data: card.data,
+                        state: result.cardState,
+                    }
                 } finally {
                     isClosed = true
                 }
