@@ -58,11 +58,19 @@ describe("SM2 engine", () => {
         db.close()
     })
 
-    it("can get stats", async () => {
-        // const stats = await engine.getStatistics({
-        //     now: 1000 as TimestampMs,
-        // })
-        // TODO(teawithsand): some assertions here
+    it("can get pre-init stats", async () => {
+        const stats = await engine.getStatistics({
+            now: 1000 as TimestampMs,
+        })
+        expect(stats.todayProcessedNewCardCount).toEqual(0)
+        expect(stats.todayProcessedLearnedCardCount).toEqual(0)
+        expect(stats.todayLeftNewCardCount).toEqual(config.newLimitBase)
+        expect(stats.todayLeftLearnedCardCount).toEqual(config.learnedLimitBase)
+
+        expect(stats.newCardCount).toEqual(cards.length)
+        expect(stats.learnedCardCount).toEqual(0)
+        expect(stats.learningCardCount).toEqual(0)
+        expect(stats.relearningCardCount).toEqual(0)
     })
 
     it("can answer a card and undo it", async () => {
@@ -136,7 +144,7 @@ describe("SM2 engine", () => {
             await engine.undo()
         }
 
-        for(const lc of localCards) {
+        for (const lc of localCards) {
             expect(lc.state.type).toEqual(SM2CardStateType.LEARNED)
 
             const storedCard = await sdb.querySingle({
