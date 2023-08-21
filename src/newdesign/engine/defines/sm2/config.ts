@@ -36,15 +36,16 @@ export type SM2EngineConfig = {
 }
 
 export const DEFAULT_SM2_ENGINE_CONFIG: Readonly<SM2EngineConfig> = {
-	learnedLimitBase: 100,
+    learnedLimitBase: 100,
 	newLimitBase: 30,
+
 	newDayDelta: 0,
 
-    skipLearningInterval: 1000 * 60 * 60 * 24 * 4,
+	notDueCardPickStrategy: NotDueCardPickStrategy.DESIRED_PRESENTATION_TIMESTAMP,
+
+
     skipLearningEaseFactor: 2,
-
-    notDueCardPickStrategy: NotDueCardPickStrategy.LEARNED_FIRST,
-
+    
     initEaseFactor: 1.4,
     minEaseFactor: 1.2,
     maxEaseFactor: 4,
@@ -53,7 +54,8 @@ export const DEFAULT_SM2_ENGINE_CONFIG: Readonly<SM2EngineConfig> = {
     easyEaseFactorDelta: 0.2,
     lapEaseFactorDelta: 0.2,
 
-    maxInterval: 1000 * 60 * 60 * 24 * 365,
+    maxInterval: 1000 * 60 * 60 * 24 * 365 * 10,
+    skipLearningInterval: 1000 * 60 * 60 * 24 * 4,
     graduatedInterval: 1000 * 60 * 60 * 24,
     relearnedInterval: 1000 * 60 * 60 * 24,
     lapInterval: 1000 * 60,
