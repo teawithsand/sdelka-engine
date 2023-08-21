@@ -37,8 +37,8 @@ export class AsyncCursor<T> implements Cursor<T> {
 			count: () => Promise<number>
 		},
 		private readonly batchSize = 30
-	) {}
-	
+	) { }
+
 	toArray = async (): Promise<T[]> => {
 		let res: T[] = []
 		if (this.currentValue) {
@@ -78,6 +78,7 @@ export class AsyncCursor<T> implements Cursor<T> {
 
 		return false
 	}
+
 	advance = async (n: number): Promise<void> => {
 		if (n <= 0) {
 			return
@@ -91,7 +92,9 @@ export class AsyncCursor<T> implements Cursor<T> {
 	}
 
 	left = async (): Promise<number> => {
-		// TODO(teawithsand): fix all off-by-one mistakes in this line
-		return (await this.adapter.count()) - this.offset + 1
+		return Math.max(
+			0,
+			(await this.adapter.count()) - this.offset
+		)
 	}
 }
