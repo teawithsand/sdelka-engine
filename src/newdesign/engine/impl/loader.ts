@@ -41,7 +41,7 @@ export class SM2IDBScopeDBEngineCardLoader<CD> implements EngineCardLoader<
             omitDeleted: true,
         }) : null
 
-        const learnedCandidate = daily.processedNewCount < stateUtil.learnedCardsLimit ? await this.db.querySingle({
+        const learnedCandidate = daily.processedLearnedCount < stateUtil.learnedCardsLimit ? await this.db.querySingle({
             type: IDBScopeDBQueryType.BY_PRIORITY,
             asc: false,
             groups: [SM2CardStateType.LEARNED],
@@ -58,7 +58,15 @@ export class SM2IDBScopeDBEngineCardLoader<CD> implements EngineCardLoader<
         })
 
         if (candidates.length) {
-            return candidates[0]
+            const candidate = candidates[0]
+            if (!candidate) throw new Error("Unreachable code")
+            if (candidate.state.type === SM2CardStateType.LEARNED) {
+                if (!stateUtil.isCardForToday(candidate.state.desiredPresentationTimestamp)) {
+                    return null
+                }
+            }
+
+            return candidate
         }
 
         return null
